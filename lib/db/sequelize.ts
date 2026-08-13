@@ -13,13 +13,16 @@ function createSequelize() {
     DB_PASSWORD,
   } = process.env;
 
-  if (!DB_NAME || !DB_USER) {
-    throw new Error(
-      "Missing DB_NAME or DB_USER environment variables. Copy .env.example to .env.local and fill in your MySQL credentials.",
-    );
-  }
-
-  return new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
+  // Deliberately don't validate DB_NAME/DB_USER here: this module is
+  // imported at build time (Next.js "collecting page data" step analyzes
+  // every route module), which happens before deployment env vars are
+  // necessarily available. Sequelize doesn't open a connection until a
+  // query actually runs, so missing/invalid credentials only surface as an
+  // error on the specific request that needs the database, not the build.
+  return new Sequelize({
+    database: DB_NAME,
+    username: DB_USER,
+    password: DB_PASSWORD,
     host: DB_HOST,
     port: Number(DB_PORT),
     dialect: "mysql",
