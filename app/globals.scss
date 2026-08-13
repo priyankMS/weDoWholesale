@@ -1,0 +1,73 @@
+@use "../styles/tokens";
+@import "tailwindcss";
+
+:root {
+  --background: #{tokens.$color-neutral-50};
+  --foreground: #{tokens.$color-neutral-900};
+
+  --color-primary-50: #{tokens.$color-primary-50};
+  --color-primary-100: #{tokens.$color-primary-100};
+  --color-primary-200: #{tokens.$color-primary-200};
+  --color-primary-500: #{tokens.$color-primary-500};
+  --color-primary-600: #{tokens.$color-primary-600};
+  --color-primary-700: #{tokens.$color-primary-700};
+
+  --color-charcoal-900: #{tokens.$color-charcoal-900};
+  --color-charcoal-800: #{tokens.$color-charcoal-800};
+  --color-charcoal-700: #{tokens.$color-charcoal-700};
+
+  --color-neutral-50: #{tokens.$color-neutral-50};
+  --color-neutral-100: #{tokens.$color-neutral-100};
+  --color-neutral-200: #{tokens.$color-neutral-200};
+  --color-neutral-400: #{tokens.$color-neutral-400};
+  --color-neutral-700: #{tokens.$color-neutral-700};
+  --color-neutral-900: #{tokens.$color-neutral-900};
+
+  --color-green-50: #{tokens.$color-green-50};
+  --color-green-200: #{tokens.$color-green-200};
+  --color-green-600: #{tokens.$color-green-600};
+
+  --radius-sm: #{tokens.$radius-sm};
+  --radius-md: #{tokens.$radius-md};
+  --radius-lg: #{tokens.$radius-lg};
+
+  --max-width: #{tokens.$max-width};
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-manrope);
+  --font-serif: var(--font-fraunces);
+
+  --color-primary-50: var(--color-primary-50);
+  --color-primary-100: var(--color-primary-100);
+  --color-primary-200: var(--color-primary-200);
+  --color-primary-500: var(--color-primary-500);
+  --color-primary-600: var(--color-primary-600);
+  --color-primary-700: var(--color-primary-700);
+
+  --color-charcoal-900: var(--color-charcoal-900);
+  --color-charcoal-800: var(--color-charcoal-800);
+  --color-charcoal-700: var(--color-charcoal-700);
+
+  --color-neutral-50: var(--color-neutral-50);
+  --color-neutral-100: var(--color-neutral-100);
+  --color-neutral-200: var(--color-neutral-200);
+  --color-neutral-400: var(--color-neutral-400);
+  --color-neutral-700: var(--color-neutral-700);
+  --color-neutral-900: var(--color-neutral-900);
+
+  --color-green-50: var(--color-green-50);
+  --color-green-200: var(--color-green-200);
+  --color-green-600: var(--color-green-600);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}

@@ -1,0 +1,35 @@
+// Design tokens for the WeDoHalal Wholesale Portal.
+// Pulled directly from the Dropbox mockups (Landing + Phase 1 Authentication)
+// so the Next.js build matches the source design exactly.
+// Kept in sync with the CSS custom properties exposed to Tailwind
+// via the `@theme` block in app/globals.scss.
+
+$color-primary-50: #fdf0ef; // red-pale
+$color-primary-100: #f9ddda;
+$color-primary-200: #f2c4c0; // red-mid
+$color-primary-500: #d94030; // red
+$color-primary-600: #b53328; // red-deep
+$color-primary-700: #922a21;
+
+$color-charcoal-900: #1c1814;
+$color-charcoal-800: #2e2926;
+$color-charcoal-700: #3d3834;
+
+$color-neutral-50: #eeecea; // warm-gray (page background)
+$color-neutral-100: #f5f4f2;
+$color-neutral-200: #dedad4; // gray-mid (borders)
+$color-neutral-400: #8a8480; // gray-dark (muted text)
+$color-neutral-700: #5a524e; // text-mid
+$color-neutral-900: #1c1714; // text
+
+$color-green-50: #eaf7ef;
+$color-green-200: #b2e0c4;
+$color-green-600: #1f7a45;
+
+$color-white: #ffffff;
+
+$radius-sm: 8px;
+$radius-md: 14px;
+$radius-lg: 20px;
+
+$max-width: 1200px;
