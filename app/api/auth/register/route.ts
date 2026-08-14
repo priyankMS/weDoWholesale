@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { UniqueConstraintError } from "sequelize";
 import { registerSchema } from "@/lib/validation/auth";
 import { User } from "@/lib/db/models/User";
 import { hashPassword } from "@/lib/auth/password";
@@ -27,20 +28,42 @@ export async function POST(request: Request) {
   }
 
   const passwordHash = await hashPassword(password);
-  const user = await User.create({
-    businessType,
-    businessName,
-    city,
-    address,
-    monthlyVolume,
-    contactName,
-    role,
-    email,
-    phone,
-    passwordHash,
-  });
 
-  await createSession({ userId: user.id, status: user.status });
+  let user;
+  try {
+    user = await User.create({
+      // `userName` is a pre-existing column on the shared `users` table
+      // (used by the retail site) — the contact person's name is the
+      // closest fit for a wholesale registration.
+      userName: contactName,
+      businessType,
+      businessName,
+      city,
+      businessAddress: address,
+      monthlyVolume,
+      contactName,
+      role,
+      email,
+      phone,
+      passwordHash,
+    });
+  } catch (err) {
+    // Guards the race between the findOne check above and this insert —
+    // the unique index on email is the real source of truth.
+    if (err instanceof UniqueConstraintError) {
+      return NextResponse.json(
+        { error: "An account with this email already exists." },
+        { status: 409 },
+      );
+    }
+    throw err;
+  }
+
+  await createSession({
+    userId: user.id,
+    status: user.status,
+    tokenVersion: user.tokenVersion,
+  });
 
   return NextResponse.json({ status: user.status });
 }

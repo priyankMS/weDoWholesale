@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // CommonJS config consumed directly by the sequelize-cli binary, which
+    // requires it via `require()` — not part of the Next.js app bundle.
+    "lib/db/config/**",
+    "lib/db/migrations/**",
   ]),
 ]);
 

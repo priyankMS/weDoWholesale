@@ -16,27 +16,41 @@ export type MonthlyVolume =
   | "500kg_plus";
 export type AccountStatus = "pending_review" | "approved" | "rejected";
 
+// Maps onto the client's existing `users` table — imported from their
+// production retail-site backup (67 real accounts). `userName` / `email` /
+// `passwordHash` / `isActive` are their pre-existing columns (note the
+// snake_case DB names below); everything from `businessType` down was added
+// by migration 20260814120000-alter-users-add-wholesale-fields specifically
+// for the wholesale portal, so it's nullable — most existing rows won't
+// have it set.
 export class User extends Model<
   InferAttributes<User>,
   InferCreationAttributes<User>
 > {
   declare id: CreationOptional<number>;
-
-  // Step 1 — business info
-  declare businessType: BusinessType;
-  declare businessName: string;
-  declare city: string;
-  declare address: string;
-  declare monthlyVolume: MonthlyVolume;
-
-  // Step 2 — contact + credentials
-  declare contactName: string;
-  declare role: string;
+  declare userName: string | null;
   declare email: string;
-  declare phone: string;
   declare passwordHash: string;
+  declare isActive: CreationOptional<boolean>;
+
+  // Wholesale-specific — business info
+  declare businessType: BusinessType | null;
+  declare businessName: string | null;
+  declare city: string | null;
+  declare businessAddress: string | null;
+  declare monthlyVolume: MonthlyVolume | null;
+
+  // Wholesale-specific — contact
+  declare contactName: string | null;
+  declare role: string | null;
+  declare phone: string | null;
 
   declare status: CreationOptional<AccountStatus>;
+
+  // Security
+  declare tokenVersion: CreationOptional<number>;
+  declare failedLoginAttempts: CreationOptional<number>;
+  declare lockedUntil: CreationOptional<Date | null>;
 
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
@@ -45,17 +59,32 @@ export class User extends Model<
 User.init(
   {
     id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER, // signed int(11) — matches the real column
       autoIncrement: true,
       primaryKey: true,
     },
+    userName: { type: DataTypes.STRING(500), allowNull: true, field: "user_name" },
+    email: { type: DataTypes.STRING(500), allowNull: false },
+    passwordHash: { type: DataTypes.STRING(500), allowNull: false, field: "password" },
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      field: "is_active",
+    },
+
     businessType: {
       type: DataTypes.ENUM("restaurant", "grocery", "mosque", "catering"),
-      allowNull: false,
+      allowNull: true,
+      field: "business_type",
     },
-    businessName: { type: DataTypes.STRING(255), allowNull: false },
-    city: { type: DataTypes.STRING(120), allowNull: false },
-    address: { type: DataTypes.STRING(255), allowNull: false },
+    businessName: { type: DataTypes.STRING(255), allowNull: true, field: "business_name" },
+    city: { type: DataTypes.STRING(120), allowNull: true },
+    businessAddress: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "business_address",
+    },
     monthlyVolume: {
       type: DataTypes.ENUM(
         "under_50kg",
@@ -64,20 +93,33 @@ User.init(
         "200_500kg",
         "500kg_plus",
       ),
-      allowNull: false,
+      allowNull: true,
+      field: "monthly_volume",
     },
-    contactName: { type: DataTypes.STRING(255), allowNull: false },
-    role: { type: DataTypes.STRING(120), allowNull: false },
-    email: { type: DataTypes.STRING(255), allowNull: false, unique: true },
-    phone: { type: DataTypes.STRING(40), allowNull: false },
-    passwordHash: { type: DataTypes.STRING(255), allowNull: false },
+    contactName: { type: DataTypes.STRING(255), allowNull: true, field: "contact_name" },
+    role: { type: DataTypes.STRING(120), allowNull: true },
+    phone: { type: DataTypes.STRING(40), allowNull: true },
+
     status: {
       type: DataTypes.ENUM("pending_review", "approved", "rejected"),
       allowNull: false,
       defaultValue: "pending_review",
     },
-    createdAt: DataTypes.DATE,
-    updatedAt: DataTypes.DATE,
+    tokenVersion: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: false,
+      defaultValue: 0,
+      field: "token_version",
+    },
+    failedLoginAttempts: {
+      type: DataTypes.SMALLINT.UNSIGNED,
+      allowNull: false,
+      defaultValue: 0,
+      field: "failed_login_attempts",
+    },
+    lockedUntil: { type: DataTypes.DATE, allowNull: true, field: "locked_until" },
+    createdAt: { type: DataTypes.DATE, field: "create_at" },
+    updatedAt: { type: DataTypes.DATE, field: "updated_at" },
   },
   {
     sequelize,

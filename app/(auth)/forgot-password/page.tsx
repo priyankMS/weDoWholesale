@@ -2,27 +2,37 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import useSWRMutation from "swr/mutation";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthHero } from "@/components/auth/AuthHero";
 import { FormCard, FormField, TextInput } from "@/components/ui/FormCard";
 import { Button } from "@/components/ui/Button";
 import { NoticeCard } from "@/components/ui/NoticeCard";
+import {
+  forgotPassword,
+  type ForgotPasswordPayload,
+} from "@/lib/api/auth";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
-  const [loading, setLoading] = useState(false);
+
+  const { trigger, isMutating } = useSWRMutation(
+    "auth/forgot-password",
+    (_key, { arg }: { arg: ForgotPasswordPayload }) => forgotPassword(arg),
+  );
 
   async function sendResetLink(e: FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    await fetch("/api/auth/forgot-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    setLoading(false);
-    setSent(true);
+    try {
+      await trigger({ email });
+    } catch {
+      // Always show the same "sent" state regardless of outcome — the API
+      // itself never reveals whether an account exists for this email, so
+      // the UI shouldn't either.
+    } finally {
+      setSent(true);
+    }
   }
 
   return (
@@ -51,8 +61,8 @@ export default function ForgotPasswordPage() {
             </FormField>
           </FormCard>
 
-          <Button type="submit" disabled={loading}>
-            {loading ? "Sending…" : "Send reset link →"}
+          <Button type="submit" disabled={isMutating}>
+            {isMutating ? "Sending…" : "Send reset link →"}
           </Button>
           <div className="mt-3 mb-3.5 text-center text-[0.84rem]">
             <Link href="/login" className="font-bold text-primary-500">

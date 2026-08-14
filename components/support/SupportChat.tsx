@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect, type FormEvent } from "react";
+import useSWRMutation from "swr/mutation";
+import { sendAgentMessage, type ChatMessage } from "@/lib/api/agent";
+import { getApiErrorMessage } from "@/lib/api/error";
 
-type Message = { role: "user" | "assistant"; content: string };
+type Message = ChatMessage;
 
 const GREETING: Message = {
   role: "assistant",
@@ -14,8 +17,12 @@ export function SupportChat() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([GREETING]);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const { trigger, isMutating } = useSWRMutation(
+    "agent/chat",
+    (_key, { arg }: { arg: ChatMessage[] }) => sendAgentMessage(arg),
+  );
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -24,30 +31,24 @@ export function SupportChat() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const text = input.trim();
-    if (!text || loading) return;
+    if (!text || isMutating) return;
 
     const next = [...messages, { role: "user" as const, content: text }];
     setMessages(next);
     setInput("");
-    setLoading(true);
 
-    const res = await fetch("/api/agent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: next.filter((m) => m !== GREETING) }),
-    });
-
-    const data = await res.json();
-    setLoading(false);
-    setMessages((m) => [
-      ...m,
-      {
-        role: "assistant",
-        content: res.ok
-          ? data.message
-          : (data.error ?? "Something went wrong. Try WhatsApp instead."),
-      },
-    ]);
+    try {
+      const data = await trigger(next.filter((m) => m !== GREETING));
+      setMessages((m) => [...m, { role: "assistant", content: data.message }]);
+    } catch (err) {
+      setMessages((m) => [
+        ...m,
+        {
+          role: "assistant",
+          content: getApiErrorMessage(err, "Something went wrong. Try WhatsApp instead."),
+        },
+      ]);
+    }
   }
 
   return (
@@ -85,7 +86,7 @@ export function SupportChat() {
                 {m.content}
               </div>
             ))}
-            {loading && (
+            {isMutating && (
               <div className="max-w-[85%] rounded-2xl bg-neutral-100 px-3.5 py-2.5 text-[0.84rem] text-neutral-400">
                 Typing…
               </div>
@@ -101,7 +102,7 @@ export function SupportChat() {
             />
             <button
               type="submit"
-              disabled={loading || !input.trim()}
+              disabled={isMutating || !input.trim()}
               className="rounded-full bg-primary-500 px-4 py-2 text-[0.84rem] font-bold text-white disabled:opacity-50"
             >
               Send

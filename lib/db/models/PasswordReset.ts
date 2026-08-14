@@ -14,7 +14,9 @@ export class PasswordReset extends Model<
 > {
   declare id: CreationOptional<number>;
   declare userId: number;
-  declare token: string;
+  // SHA-256 hash of the reset token — never store the raw token, so a
+  // database leak alone can't be used to take over accounts.
+  declare tokenHash: string;
   declare expiresAt: Date;
   declare usedAt: CreationOptional<Date | null>;
   declare createdAt: CreationOptional<Date>;
@@ -28,7 +30,7 @@ PasswordReset.init(
       primaryKey: true,
     },
     userId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
-    token: { type: DataTypes.STRING(255), allowNull: false, unique: true },
+    tokenHash: { type: DataTypes.STRING(64), allowNull: false, unique: true },
     expiresAt: { type: DataTypes.DATE, allowNull: false },
     usedAt: { type: DataTypes.DATE, allowNull: true },
     createdAt: DataTypes.DATE,

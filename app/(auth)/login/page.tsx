@@ -3,41 +3,37 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import useSWRMutation from "swr/mutation";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthHero } from "@/components/auth/AuthHero";
 import { FormCard, FormField, TextInput } from "@/components/ui/FormCard";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Button } from "@/components/ui/Button";
 import { NoticeCard } from "@/components/ui/NoticeCard";
+import { login, type LoginPayload } from "@/lib/api/auth";
+import { getApiErrorMessage } from "@/lib/api/error";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  const { trigger, isMutating } = useSWRMutation(
+    "auth/login",
+    (_key, { arg }: { arg: LoginPayload }) => login(arg),
+  );
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    setLoading(false);
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Something went wrong. Please try again.");
-      return;
+    try {
+      const data = await trigger({ email, password });
+      router.push(data.status === "approved" ? "/" : "/pending");
+    } catch (err) {
+      setError(getApiErrorMessage(err));
     }
-
-    const data = await res.json();
-    router.push(data.status === "approved" ? "/" : "/pending");
   }
 
   return (
@@ -81,8 +77,8 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <Button type="submit" disabled={loading}>
-          {loading ? "Signing in…" : "Sign in to your account →"}
+        <Button type="submit" disabled={isMutating}>
+          {isMutating ? "Signing in…" : "Sign in to your account →"}
         </Button>
 
         <div className="my-3.5 flex items-center gap-3">

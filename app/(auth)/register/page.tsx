@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import useSWRMutation from "swr/mutation";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthHero } from "@/components/auth/AuthHero";
 import { FormCard, FormField, TextInput, Select } from "@/components/ui/FormCard";
@@ -13,6 +14,8 @@ import { StepIndicator } from "@/components/ui/StepIndicator";
 import { BusinessTypeGrid } from "@/components/ui/BusinessTypeGrid";
 import { Timeline } from "@/components/ui/Timeline";
 import type { BusinessType, MonthlyVolume } from "@/lib/db/models/User";
+import { register, type RegisterPayload } from "@/lib/api/auth";
+import { getApiErrorMessage } from "@/lib/api/error";
 
 const CITIES = [
   "Edmonton",
@@ -70,8 +73,12 @@ export default function RegisterPage() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(INITIAL_STATE);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const { trigger, isMutating } = useSWRMutation(
+    "auth/register",
+    (_key, { arg }: { arg: RegisterPayload }) => register(arg),
+  );
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -85,23 +92,16 @@ export default function RegisterPage() {
   async function handleStep2Submit(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-
-    setLoading(false);
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Something went wrong. Please try again.");
-      return;
+    try {
+      // Business type defaults to "restaurant" and every other required
+      // field is guarded by the form's own `required` attributes, so by
+      // the time step 2 submits, form already satisfies RegisterPayload.
+      await trigger(form as RegisterPayload);
+      setSubmitted(true);
+    } catch (err) {
+      setError(getApiErrorMessage(err));
     }
-
-    setSubmitted(true);
   }
 
   if (submitted) {
@@ -381,8 +381,8 @@ export default function RegisterPage() {
             <p className="mb-3 text-[0.82rem] font-semibold text-red-600">{error}</p>
           )}
 
-          <Button type="submit" disabled={loading}>
-            {loading ? "Submitting…" : "Submit application →"}
+          <Button type="submit" disabled={isMutating}>
+            {isMutating ? "Submitting…" : "Submit application →"}
           </Button>
           <button
             type="button"
