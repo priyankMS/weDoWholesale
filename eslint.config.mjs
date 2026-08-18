@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
     // requires it via `require()` — not part of the Next.js app bundle.
     "lib/db/config/**",
     "lib/db/migrations/**",
+    "lib/db/seeders/**",
   ]),
 ]);
 

@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { forwardRef, type ReactNode } from "react";
 
 export function FormCard({ children }: { children: ReactNode }) {
   return (
@@ -28,14 +28,32 @@ export function FormField({
 const fieldClass =
   "w-full border-none bg-transparent py-1.5 pb-3 font-sans text-[0.95rem] font-medium text-neutral-900 outline-none placeholder:font-normal placeholder:text-neutral-400";
 
-export function TextInput(props: React.ComponentPropsWithoutRef<"input">) {
-  return <input {...props} className={`${fieldClass} ${props.className ?? ""}`} />;
-}
-
-export function Select(props: React.ComponentPropsWithoutRef<"select">) {
+// forwardRef so react-hook-form's `register()` can attach its ref directly
+// to the underlying native element.
+export const TextInput = forwardRef<
+  HTMLInputElement,
+  React.ComponentPropsWithoutRef<"input">
+>(function TextInput(props, ref) {
   return (
-    <select {...props} className={`${fieldClass} cursor-pointer ${props.className ?? ""}`}>
+    <input
+      {...props}
+      ref={ref}
+      className={`${fieldClass} ${props.className ?? ""}`}
+    />
+  );
+});
+
+export const Select = forwardRef<
+  HTMLSelectElement,
+  React.ComponentPropsWithoutRef<"select">
+>(function Select(props, ref) {
+  return (
+    <select
+      {...props}
+      ref={ref}
+      className={`${fieldClass} cursor-pointer ${props.className ?? ""}`}
+    >
       {props.children}
     </select>
   );
-}
+});

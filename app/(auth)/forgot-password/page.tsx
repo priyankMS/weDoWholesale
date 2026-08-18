@@ -1,37 +1,63 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import useSWRMutation from "swr/mutation";
+import { toast } from "sonner";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthHero } from "@/components/auth/AuthHero";
 import { FormCard, FormField, TextInput } from "@/components/ui/FormCard";
 import { Button } from "@/components/ui/Button";
 import { NoticeCard } from "@/components/ui/NoticeCard";
+import { FieldError } from "@/components/ui/FieldError";
 import {
   forgotPassword,
   type ForgotPasswordPayload,
 } from "@/lib/api/auth";
+import { getApiErrorMessage } from "@/lib/api/error";
+import { forgotPasswordSchema } from "@/lib/validation/auth";
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [sentEmail, setSentEmail] = useState("");
+
+  const {
+    register,
+    handleSubmit,
+    getValues,
+    formState: { errors },
+  } = useForm<ForgotPasswordPayload>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: "" },
+  });
 
   const { trigger, isMutating } = useSWRMutation(
     "auth/forgot-password",
     (_key, { arg }: { arg: ForgotPasswordPayload }) => forgotPassword(arg),
   );
 
-  async function sendResetLink(e: FormEvent) {
-    e.preventDefault();
+  async function onSubmit(values: ForgotPasswordPayload) {
     try {
-      await trigger({ email });
-    } catch {
-      // Always show the same "sent" state regardless of outcome — the API
-      // itself never reveals whether an account exists for this email, so
-      // the UI shouldn't either.
-    } finally {
+      await trigger(values);
+      setSentEmail(values.email);
       setSent(true);
+    } catch (err) {
+      // The API itself always responds ok (it never reveals whether an
+      // account exists for this email), so a real error here means
+      // something actually went wrong client-side (network, validation) —
+      // surface it instead of silently pretending it sent.
+      toast.error(getApiErrorMessage(err));
+    }
+  }
+
+  async function resend() {
+    try {
+      await trigger({ email: sentEmail || getValues("email") });
+      toast.success("Reset link sent again.");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
     }
   }
 
@@ -44,7 +70,7 @@ export default function ForgotPasswordPage() {
       />
 
       {!sent ? (
-        <form onSubmit={sendResetLink}>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="mb-2 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase">
             Your account email
           </div>
@@ -52,14 +78,13 @@ export default function ForgotPasswordPage() {
             <FormField label="Email address">
               <TextInput
                 type="email"
-                required
                 autoComplete="email"
                 placeholder="yourrestaurant@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                {...register("email")}
               />
             </FormField>
           </FormCard>
+          <FieldError message={errors.email?.message} />
 
           <Button type="submit" disabled={isMutating}>
             {isMutating ? "Sending…" : "Send reset link →"}
@@ -110,9 +135,10 @@ export default function ForgotPasswordPage() {
             variant="ghost"
             type="button"
             className="mt-3"
-            onClick={sendResetLink}
+            onClick={resend}
+            disabled={isMutating}
           >
-            Resend the link
+            {isMutating ? "Resending…" : "Resend the link"}
           </Button>
         </>
       )}

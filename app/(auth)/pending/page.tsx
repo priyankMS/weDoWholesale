@@ -13,7 +13,7 @@ export default async function PendingPage() {
 
   const user = await User.findByPk(session.userId);
   if (!user) redirect("/login");
-  if (user.status === "approved") redirect("/");
+  if (user.status === "approved") redirect("/catalogue");
 
   const businessIcon =
     BUSINESS_TYPES.find((b) => b.value === user.businessType)?.icon ?? "🏢";

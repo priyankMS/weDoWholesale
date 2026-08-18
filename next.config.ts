@@ -5,6 +5,15 @@ const nextConfig: NextConfig = {
   // drivers we never use (e.g. pg-hstore) — keep it external so Next.js
   // doesn't try to bundle those optional deps.
   serverExternalPackages: ["sequelize"],
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.wedohalal.com",
+        pathname: "/products/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import { SupportChat } from "@/components/support/SupportChat";
+import { Toaster } from "@/components/ui/Toaster";
 import "./globals.scss";
 
 const fraunces = Fraunces({
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col font-sans">
         {children}
         <SupportChat />
+        <Toaster />
       </body>
     </html>
   );

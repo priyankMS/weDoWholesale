@@ -1,10 +1,12 @@
 "use client";
 
+import type { StockState } from "@/lib/db/queries/catalogue";
+
 export type FilterState = {
   condition: string[];
   bone: string[];
   skin: string[];
-  stock: string[];
+  stock: StockState[];
   priceMin: number | null;
   priceMax: number | null;
 };
@@ -24,7 +26,7 @@ export function countActiveFilters(f: FilterState): number {
   return n;
 }
 
-function toggle(list: string[], val: string): string[] {
+function toggle<T extends string>(list: T[], val: T): T[] {
   return list.includes(val) ? list.filter((v) => v !== val) : [...list, val];
 }
 
@@ -200,10 +202,12 @@ export function FilterDrawer({
             Availability
           </div>
           <div className="mb-3.5 flex flex-wrap gap-1.75">
-            {[
-              { val: "in", label: "● In stock" },
-              { val: "low", label: "◐ Low stock" },
-            ].map((s) => (
+            {(
+              [
+                { val: "in", label: "● In stock" },
+                { val: "low", label: "◐ Low stock" },
+              ] as const
+            ).map((s) => (
               <Chip
                 key={s.val}
                 label={s.label}

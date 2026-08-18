@@ -1,38 +1,46 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import useSWRMutation from "swr/mutation";
+import { toast } from "sonner";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthHero } from "@/components/auth/AuthHero";
 import { FormCard, FormField, TextInput } from "@/components/ui/FormCard";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Button } from "@/components/ui/Button";
 import { NoticeCard } from "@/components/ui/NoticeCard";
+import { FieldError } from "@/components/ui/FieldError";
 import { login, type LoginPayload } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api/error";
+import { loginSchema } from "@/lib/validation/auth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginPayload>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+  });
 
   const { trigger, isMutating } = useSWRMutation(
     "auth/login",
     (_key, { arg }: { arg: LoginPayload }) => login(arg),
   );
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setError(null);
-
+  async function onSubmit(values: LoginPayload) {
     try {
-      const data = await trigger({ email, password });
-      router.push(data.status === "approved" ? "/" : "/pending");
+      const data = await trigger(values);
+      toast.success("Welcome back!");
+      router.push(data.status === "approved" ? "/catalogue" : "/pending");
     } catch (err) {
-      setError(getApiErrorMessage(err));
+      toast.error(getApiErrorMessage(err));
     }
   }
 
@@ -44,32 +52,26 @@ export default function LoginPage() {
         sub="Bulk halal meat delivered to your door across Edmonton and Alberta."
       />
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <FormCard>
           <FormField label="Email address">
             <TextInput
               type="email"
-              required
               autoComplete="email"
               placeholder="yourrestaurant@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              {...register("email")}
             />
           </FormField>
           <FormField label="Password">
             <PasswordInput
-              required
               autoComplete="current-password"
               placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              {...register("password")}
             />
           </FormField>
         </FormCard>
-
-        {error && (
-          <p className="mb-3 text-[0.82rem] font-semibold text-red-600">{error}</p>
-        )}
+        <FieldError message={errors.email?.message} />
+        <FieldError message={errors.password?.message} />
 
         <div className="mb-3.5 text-right text-[0.84rem]">
           <Link href="/forgot-password" className="font-bold text-primary-500">

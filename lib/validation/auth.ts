@@ -28,13 +28,10 @@ export const businessInfoSchema = z.object({
     .trim()
     .min(5, "Enter your business address")
     .max(255, "Address is too long"),
-  monthlyVolume: z.enum([
-    "under_50kg",
-    "50_100kg",
-    "100_200kg",
-    "200_500kg",
-    "500kg_plus",
-  ]),
+  monthlyVolume: z.enum(
+    ["under_50kg", "50_100kg", "100_200kg", "200_500kg", "500kg_plus"],
+    { error: "Select your approximate monthly volume" },
+  ),
 });
 
 const contactInfoFields = {
@@ -49,9 +46,12 @@ const contactInfoFields = {
     .regex(/^[0-9+()\- .]+$/, "Enter a valid phone number"),
   password: passwordSchema,
   confirmPassword: z.string(),
-  agreeTerms: z.literal(true, {
-    error: "You must agree to the terms to continue",
-  }),
+  // `.boolean()` (not `.literal(true)`) so the inferred TS type stays
+  // `boolean` — needed for a checkbox field, which must be able to hold
+  // `false` while unchecked, not just its one valid submit value.
+  agreeTerms: z
+    .boolean()
+    .refine((v) => v === true, { error: "You must agree to the terms to continue" }),
 };
 
 export const contactInfoSchema = z

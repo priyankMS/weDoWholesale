@@ -1,16 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 
-export function PasswordInput(
-  props: React.ComponentPropsWithoutRef<"input">,
-) {
+// forwardRef so react-hook-form's `register()` can attach its ref directly
+// to the underlying native input.
+export const PasswordInput = forwardRef<
+  HTMLInputElement,
+  React.ComponentPropsWithoutRef<"input">
+>(function PasswordInput(props, ref) {
   const [visible, setVisible] = useState(false);
 
   return (
     <div className="relative">
       <input
         {...props}
+        ref={ref}
         type={visible ? "text" : "password"}
         className={`w-full border-none bg-transparent py-1.5 pr-7 pb-3 font-sans text-[0.95rem] font-medium text-neutral-900 outline-none placeholder:font-normal placeholder:text-neutral-400 ${props.className ?? ""}`}
       />
@@ -24,4 +28,4 @@ export function PasswordInput(
       </button>
     </div>
   );
-}
+});

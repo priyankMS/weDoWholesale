@@ -2,6 +2,7 @@ import { Op } from "sequelize";
 import { WdhProduct } from "@/lib/db/models/WdhProduct";
 import { WdhVariant } from "@/lib/db/models/WdhVariant";
 import { WdhVariantPricing } from "@/lib/db/models/WdhVariantPricing";
+import { variantLabel } from "@/lib/format";
 
 // ── Category chrome ──
 // The mockup's demo catalog used 7 fictional categories (beef, chicken,
@@ -64,19 +65,9 @@ function bestVariantPrice(
   return Math.min(...positive);
 }
 
-// Real variants carry condition/bone/skin, not the mockup's fictional
-// named cuts ("Whole", "Trimmed Fat" etc). `cut_value` is unused in the
-// real data (only garbage test values) so it's deliberately left out.
-export function variantLabel(variant: {
-  conditionType?: string | null;
-  boneType?: string | null;
-  skinType?: string | null;
-}): string {
-  const parts = [variant.conditionType, variant.boneType, variant.skinType].filter(
-    (v): v is string => !!v && v.trim().length > 0,
-  );
-  return parts.length ? parts.join(" · ") : "Standard";
-}
+// `cut_value` is unused in the real data (only garbage test values) so
+// it's deliberately left out of variantLabel (imported from lib/format —
+// see the note there for why it doesn't live in this module).
 
 export function unitFor(category: string, per: string | null): string {
   if (per && per.trim()) return per.replace(/^Price per /i, "");
@@ -92,6 +83,7 @@ export type VariantSummary = {
   price: number | null;
   stockCount: number;
   stockState: StockState;
+  image: string | null;
 };
 
 export type ProductSummary = {
@@ -105,6 +97,7 @@ export type ProductSummary = {
   minPrice: number | null;
   variants: VariantSummary[];
   stockState: StockState;
+  image: string | null;
 };
 
 function toSummary(product: WdhProduct): ProductSummary {
@@ -120,10 +113,16 @@ function toSummary(product: WdhProduct): ProductSummary {
       price,
       stockCount: v.stockCount ?? 0,
       stockState,
+      image: v.image1 || v.thumbnail || null,
     };
   });
 
   const prices = variants.map((v) => v.price).filter((p): p is number => p != null);
+  const productImage =
+    variants.find((v) => v.price != null && v.image)?.image ??
+    variants.find((v) => v.image)?.image ??
+    product.thumbnail ??
+    null;
   const stockStates = variants.map((v) => v.stockState);
   const overallStock: StockState = stockStates.includes("in")
     ? "in"
@@ -144,6 +143,7 @@ function toSummary(product: WdhProduct): ProductSummary {
     minPrice: prices.length ? Math.min(...prices) : null,
     variants,
     stockState: overallStock,
+    image: productImage,
   };
 }
 
@@ -186,22 +186,122 @@ export async function getAllCategoryNames(): Promise<string[]> {
   return rows.map((r) => r.category ?? "").filter(Boolean);
 }
 
-export async function getProductsByCategory(category: string): Promise<{
+export type ProductQuerySort = "default" | "price-asc" | "price-desc" | "name-asc" | "stock";
+
+export type ProductQueryParams = {
+  category: string;
+  search?: string;
+  type?: string;
+  condition?: string[];
+  bone?: string[];
+  skin?: string[];
+  stock?: StockState[];
+  priceMin?: number;
+  priceMax?: number;
+  sort?: ProductQuerySort;
+  page?: number;
+  pageSize?: number;
+};
+
+export type ProductFacets = {
+  types: string[];
+  condition: string[];
+  bone: string[];
+  skin: string[];
+};
+
+export type ProductQueryResult = {
   products: ProductSummary[];
-  parts: string[];
-}> {
-  const rows = await WdhProduct.findAll({
-    where: { category, item: { [Op.notIn]: TEST_ITEM_NAMES } },
-    include: productInclude,
-    order: [["item", "ASC"]],
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+  facets: ProductFacets;
+};
+
+function uniqueSorted(values: (string | null | undefined)[]): string[] {
+  return Array.from(new Set(values.filter((v): v is string => !!v && v.trim().length > 0))).sort(
+    (a, b) => a.localeCompare(b),
+  );
+}
+
+// The category listing screen (Phase 2 Discovery and Browsing). Pushes
+// category/search/type down to SQL (the only filters that map to plain
+// columns); condition/bone/skin/stock/price are derived per-variant
+// aggregates (best price across suppliers, computed stock state) so
+// they're applied after `toSummary`, then sorted and paginated in memory.
+// Category result sets top out around 40 rows, so this is a single
+// category-scoped query rather than N+1 — well within what a JS-side
+// filter/sort/slice pass can do in microseconds; it isn't a full-table
+// scan the way `getAllProducts()` would be.
+export async function queryProducts(params: ProductQueryParams): Promise<ProductQueryResult> {
+  const {
+    category,
+    search,
+    type,
+    condition = [],
+    bone = [],
+    skin = [],
+    stock = [],
+    priceMin,
+    priceMax,
+    sort = "default",
+    page = 1,
+    pageSize = 10,
+  } = params;
+
+  const where: Record<string | symbol, unknown> = {
+    category,
+    item: { [Op.notIn]: TEST_ITEM_NAMES },
+  };
+  const trimmedSearch = search?.trim();
+  if (trimmedSearch) {
+    where[Op.or as unknown as string] = [
+      { item: { [Op.like]: `%${trimmedSearch}%` } },
+      { type: { [Op.like]: `%${trimmedSearch}%` } },
+    ];
+  }
+  if (type && type !== "All") where.type = type;
+
+  const rows = await WdhProduct.findAll({ where, include: productInclude, order: [["item", "ASC"]] });
+  let products = rows.map(toSummary);
+
+  // Facet option lists reflect the category+search+type scope (what a
+  // faceted-search UI conventionally shows) — computed before the
+  // condition/bone/skin/stock/price filters below are applied, so picking
+  // one facet doesn't hide the others still reachable from here.
+  const facets: ProductFacets = {
+    types: uniqueSorted(rows.map((r) => r.type)),
+    condition: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.conditionType))),
+    bone: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.boneType))),
+    skin: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.skinType))),
+  };
+
+  products = products.filter((p) => {
+    if (condition.length && !p.variants.some((v) => v.conditionType && condition.includes(v.conditionType)))
+      return false;
+    if (bone.length && !p.variants.some((v) => v.boneType && bone.includes(v.boneType))) return false;
+    if (skin.length && !p.variants.some((v) => v.skinType && skin.includes(v.skinType))) return false;
+    if (stock.length && !stock.includes(p.stockState)) return false;
+    if (priceMin != null && (p.minPrice == null || p.minPrice < priceMin)) return false;
+    if (priceMax != null && (p.minPrice == null || p.minPrice > priceMax)) return false;
+    return true;
   });
 
-  const products = rows.map(toSummary);
-  const parts = Array.from(
-    new Set(products.map((p) => p.type).filter((t): t is string => !!t)),
-  ).sort((a, b) => a.localeCompare(b));
+  if (sort === "price-asc")
+    products = [...products].sort((a, b) => (a.minPrice ?? Infinity) - (b.minPrice ?? Infinity));
+  if (sort === "price-desc")
+    products = [...products].sort((a, b) => (b.minPrice ?? -Infinity) - (a.minPrice ?? -Infinity));
+  if (sort === "name-asc") products = [...products].sort((a, b) => a.name.localeCompare(b.name));
+  if (sort === "stock")
+    products = [...products].sort((a, b) => (a.stockState === "in" ? 0 : 1) - (b.stockState === "in" ? 0 : 1));
 
-  return { products, parts };
+  const total = products.length;
+  const start = (page - 1) * pageSize;
+  const paged = products.slice(start, start + pageSize);
+  const hasMore = start + paged.length < total;
+
+  return { products: paged, total, page, pageSize, hasMore, facets };
 }
 
 export async function getAllProducts(): Promise<ProductSummary[]> {
