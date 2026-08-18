@@ -2,6 +2,7 @@ import { Op } from "sequelize";
 import { WdhProduct } from "@/lib/db/models/WdhProduct";
 import { WdhVariant } from "@/lib/db/models/WdhVariant";
 import { WdhVariantPricing } from "@/lib/db/models/WdhVariantPricing";
+import { WdhSupplier } from "@/lib/db/models/WdhSupplier";
 import { variantLabel } from "@/lib/format";
 
 // ── Category chrome ──
@@ -52,7 +53,7 @@ export function stockStateFor(stockCount: number | null): StockState {
   return "in";
 }
 
-function bestVariantPrice(
+export function bestVariantPrice(
   variant: WdhVariant,
   pricing: WdhVariantPricing[],
 ): number | null {
@@ -84,6 +85,7 @@ export type VariantSummary = {
   stockCount: number;
   stockState: StockState;
   image: string | null;
+  supplierName: string | null;
 };
 
 export type ProductSummary = {
@@ -104,6 +106,16 @@ function toSummary(product: WdhProduct): ProductSummary {
   const variants = (product.variants ?? []).map((v): VariantSummary => {
     const price = bestVariantPrice(v, v.pricing ?? []);
     const stockState = stockStateFor(v.stockCount ?? null);
+    // Every wdh_variant_pricing row carries a real supplier_id from the
+    // original import (confirmed against live data — all 274 rows have
+    // one, even the ~97% with no usable price), so this reflects an
+    // actual supplier association, not a guess. Doesn't necessarily match
+    // which price is shown (that can come from the wholesale-pricing seed
+    // instead of this table) — it's for display grouping only.
+    const pricingWithSupplier = (v.pricing ?? []) as (WdhVariantPricing & {
+      WdhSupplier?: WdhSupplier;
+    })[];
+    const supplierName = pricingWithSupplier.find((p) => p.WdhSupplier)?.WdhSupplier?.name ?? null;
     return {
       id: v.id,
       label: variantLabel(v),
@@ -114,6 +126,7 @@ function toSummary(product: WdhProduct): ProductSummary {
       stockCount: v.stockCount ?? 0,
       stockState,
       image: v.image1 || v.thumbnail || null,
+      supplierName,
     };
   });
 
@@ -151,7 +164,7 @@ const productInclude = [
   {
     model: WdhVariant,
     as: "variants",
-    include: [{ model: WdhVariantPricing, as: "pricing" }],
+    include: [{ model: WdhVariantPricing, as: "pricing", include: [{ model: WdhSupplier }] }],
   },
 ];
 

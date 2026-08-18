@@ -1,17 +1,15 @@
 "use client";
 
 import useSWR from "swr";
-import Link from "next/link";
 import { fetchAllProducts } from "@/lib/api/catalogue";
 import { useSavedProducts } from "@/lib/hooks/useSavedProducts";
-import { useToast } from "@/components/portal/ToastProvider";
+import { ProductCard } from "@/components/portal/ProductCard";
 
 export default function SavedPage() {
   const { data: products, isLoading } = useSWR("catalogue-products", fetchAllProducts, {
     fallbackData: [],
   });
   const { savedIds, toggle } = useSavedProducts();
-  const showToast = useToast();
 
   const saved = (products ?? []).filter((p) => savedIds.has(p.id));
 
@@ -37,48 +35,13 @@ export default function SavedPage() {
           </div>
           <div className="flex flex-col gap-2.5 px-4 lg:grid lg:grid-cols-2 lg:px-0 xl:grid-cols-3">
             {saved.map((p) => (
-              <div
+              <ProductCard
                 key={p.id}
-                className="flex items-center gap-3 rounded-2xl border-[1.5px] border-neutral-200 bg-white p-3.5"
-              >
-                <Link
-                  href={`/products/${p.id}`}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-primary-50 text-[1.6rem]"
-                >
-                  {p.icon}
-                </Link>
-                <div className="min-w-0 flex-1">
-                  <Link
-                    href={`/products/${p.id}`}
-                    className="block truncate text-[0.9rem] font-bold text-neutral-900"
-                  >
-                    {p.name}
-                  </Link>
-                  <div className="text-[0.72rem] text-neutral-400">
-                    {p.category}
-                    {p.type ? ` · ${p.type}` : ""}
-                  </div>
-                  <div className="font-serif text-[1rem] font-bold text-primary-600">
-                    {p.minPrice != null ? `$${p.minPrice.toFixed(2)} / ${p.unit}` : "Contact for pricing"}
-                  </div>
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => showToast(`${p.name} added to cart ✓`)}
-                    className="rounded-[8px] bg-primary-500 px-3 py-1.5 text-[0.76rem] font-extrabold whitespace-nowrap text-white hover:bg-primary-600"
-                  >
-                    Add to cart
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toggle(p.id)}
-                    className="text-[0.72rem] font-semibold text-neutral-400 hover:text-primary-500"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
+                product={p}
+                saved
+                onToggleSave={() => toggle(p.id)}
+                layout="list"
+              />
             ))}
           </div>
         </>

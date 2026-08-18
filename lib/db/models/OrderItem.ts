@@ -15,6 +15,7 @@ export class OrderItem extends Model<
   declare id: CreationOptional<number>;
   declare orderId: number;
   declare productId: number;
+  declare variantId: CreationOptional<number | null>;
   declare sku: string | null;
   declare productName: string | null;
   declare quantity: CreationOptional<number>;
@@ -27,6 +28,7 @@ OrderItem.init(
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     orderId: { type: DataTypes.INTEGER, allowNull: false, field: "order_id" },
     productId: { type: DataTypes.INTEGER, allowNull: false, field: "product_id" },
+    variantId: { type: DataTypes.INTEGER, allowNull: true, field: "variant_id" },
     sku: { type: DataTypes.STRING(100), allowNull: true },
     productName: { type: DataTypes.STRING(255), allowNull: true, field: "product_name" },
     quantity: { type: DataTypes.DECIMAL(10, 3), allowNull: false, defaultValue: 1 },

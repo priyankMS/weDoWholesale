@@ -36,6 +36,9 @@ export class Order extends Model<
   declare shippingAddressId: number | null;
   declare billingAddressId: number | null;
   declare timeSlot: string | null;
+  declare deliveryDate: CreationOptional<string | null>;
+  declare gstAmount: CreationOptional<number | null>;
+  declare paymentOption: CreationOptional<string | null>;
   declare notes: string | null;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
@@ -75,6 +78,9 @@ Order.init(
     shippingAddressId: { type: DataTypes.INTEGER, allowNull: true, field: "shipping_address_id" },
     billingAddressId: { type: DataTypes.INTEGER, allowNull: true, field: "billing_address_id" },
     timeSlot: { type: DataTypes.STRING(50), allowNull: true, field: "time_slot" },
+    deliveryDate: { type: DataTypes.DATEONLY, allowNull: true, field: "delivery_date" },
+    gstAmount: { type: DataTypes.DECIMAL(10, 2), allowNull: true, defaultValue: 0, field: "gst_amount" },
+    paymentOption: { type: DataTypes.STRING(30), allowNull: true, field: "payment_option" },
     notes: { type: DataTypes.TEXT, allowNull: true },
     createdAt: { type: DataTypes.DATE, field: "created_at" },
     updatedAt: { type: DataTypes.DATE, field: "updated_at" },

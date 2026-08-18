@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useToast } from "@/components/portal/ToastProvider";
+import { useCart } from "@/lib/cart/CartContext";
 import { QtyStepper } from "@/components/ui/QtyStepper";
 import { stockLabel, variantLabel } from "@/lib/format";
 import { categoryGradient, productIcon } from "@/lib/productVisuals";
@@ -31,6 +31,7 @@ export function ProductCard({
   layout?: Layout;
 }) {
   const showToast = useToast();
+  const { addItem } = useCart();
   const [expanded, setExpanded] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState(
     product.variants[0]?.id ?? null,
@@ -48,7 +49,35 @@ export function ProductCard({
   const icon = productIcon(product.category);
   const imageUrl = selectedVariant?.image ?? product.image;
 
+  // The pricing sheet's image URLs aren't all live (a handful 404 —
+  // mismatched/renamed assets in the client's own library) — fall back to
+  // the category tile instead of a broken-image glyph. Reset during render
+  // (React's documented pattern for state keyed to a changing prop/value)
+  // rather than in an effect, so switching cuts in the variant picker
+  // re-attempts the new image without an extra render round-trip.
+  const [imgFailed, setImgFailed] = useState(false);
+  const [checkedUrl, setCheckedUrl] = useState(imageUrl);
+  if (imageUrl !== checkedUrl) {
+    setCheckedUrl(imageUrl);
+    setImgFailed(false);
+  }
+  const showImage = !!imageUrl && !imgFailed;
+
   function addToCart() {
+    if (!selectedVariant || displayPrice == null) return;
+    addItem(
+      {
+        productId: product.id,
+        variantId: selectedVariant.id,
+        name: metaLine ? `${product.name} (${metaLine})` : product.name,
+        category: product.category,
+        unit: product.unit,
+        image: imageUrl,
+        price: displayPrice,
+        supplierName: selectedVariant.supplierName,
+      },
+      qty,
+    );
     showToast(`${product.name} added to cart ✓`);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1600);
@@ -62,10 +91,19 @@ export function ProductCard({
         onToggleSave();
       }}
       aria-label={saved ? "Remove from saved" : "Save"}
-      className={`shrink-0 p-1 text-[1.1rem] transition-colors ${saved ? "text-primary-500" : "text-neutral-300"}`}
+      className={`flex h-7 w-7 shrink-0 items-center justify-center text-[1.1rem] transition-colors ${saved ? "text-primary-500" : "text-neutral-300"}`}
     >
       {saved ? "♥" : "♡"}
     </button>
+  );
+
+  // Round white badge, only used to host the save button over the photo
+  // tile (grid layout) — the list layout's heart sits inline in the text
+  // column instead, no badge needed there.
+  const saveBadge = (
+    <div className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm">
+      {saveButton}
+    </div>
   );
 
   const priceBlock = (
@@ -179,32 +217,36 @@ export function ProductCard({
   if (layout === "grid") {
     return (
       <div className="overflow-hidden rounded-2xl border-[1.5px] border-neutral-200 bg-white transition-shadow hover:shadow-sm">
-        <div
-          className="relative flex aspect-[4/3] items-center justify-center overflow-hidden text-[3.25rem]"
-          style={imageUrl ? undefined : { backgroundImage: gradient }}
+        <Link
+          href={`/products/${product.id}`}
+          className="relative flex aspect-[4/3] items-center justify-center overflow-hidden"
+          style={showImage ? undefined : { backgroundImage: gradient }}
         >
-          {imageUrl ? (
-            <Image
+          {showImage ? (
+            // Pre-optimized CDN webp from images.wedohalal.com; next/image's
+            // optimizer 400s on this Next 16.3 Turbopack build even with a
+            // matching remotePattern.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               src={imageUrl}
               alt={product.name}
-              fill
-              sizes="(min-width: 1280px) 33vw, (min-width: 1024px) 50vw, 100vw"
-              className="object-cover"
+              className="h-full w-full object-cover"
+              onError={() => setImgFailed(true)}
             />
           ) : (
-            <span aria-hidden>{icon}</span>
+            <span aria-hidden className="text-[3.25rem]">
+              {icon}
+            </span>
           )}
-          <div className="absolute top-2 left-2 rounded-full bg-white/85 backdrop-blur-sm">
-            {saveButton}
-          </div>
           {product.stockState !== "in" && (
             <span
-              className={`absolute top-2 right-2 rounded-full px-2 py-0.75 text-[0.62rem] font-bold shadow-sm ${STOCK_CLASS[product.stockState]}`}
+              className={`absolute top-2 left-2 rounded-full px-2 py-0.75 text-[0.62rem] font-bold shadow-sm ${STOCK_CLASS[product.stockState]}`}
             >
               {stockLabel(product.stockState)}
             </span>
           )}
-        </div>
+          {saveBadge}
+        </Link>
         <div
           className={expandable ? "cursor-pointer px-3.5 py-3" : "px-3.5 py-3"}
           onClick={expandable ? () => setExpanded((v) => !v) : undefined}
@@ -227,16 +269,25 @@ export function ProductCard({
         className={`flex items-start gap-3 px-3.5 py-3.5 ${expandable ? "cursor-pointer" : ""}`}
         onClick={expandable ? () => setExpanded((v) => !v) : undefined}
       >
-        <div
-          className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[10px] text-[1.85rem]"
-          style={imageUrl ? undefined : { backgroundImage: gradient }}
+        <Link
+          href={`/products/${product.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[10px]"
+          style={showImage ? undefined : { backgroundImage: gradient }}
         >
-          {imageUrl ? (
-            <Image src={imageUrl} alt={product.name} fill sizes="48px" className="object-cover" />
+          {showImage ? (
+            // See the grid-layout tile above for why this is a plain <img>.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageUrl}
+              alt={product.name}
+              className="h-full w-full object-cover"
+              onError={() => setImgFailed(true)}
+            />
           ) : (
-            icon
+            <span className="text-[1.85rem]">{icon}</span>
           )}
-        </div>
+        </Link>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
