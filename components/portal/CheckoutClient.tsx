@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart/CartContext";
-import { placeOrder, type OrderReceipt } from "@/lib/api/orders";
+import { placeOrder, startStripeCheckout, type OrderReceipt } from "@/lib/api/orders";
 import { getApiErrorMessage } from "@/lib/api/error";
 import { DELIVERY_WINDOWS, PAYMENT_OPTIONS } from "@/lib/validation/orders";
+import { WhatsNextSteps } from "@/components/portal/WhatsNextSteps";
 
 type DeliveryMethod = "delivery" | "pickup";
 type DeliveryWindow = (typeof DELIVERY_WINDOWS)[number];
@@ -33,6 +34,11 @@ const PAYMENT_META: Record<
   PaymentOption,
   { icon: string; label: string; desc: string; note?: string }
 > = {
+  card: {
+    icon: "💳",
+    label: "Card (Stripe test)",
+    desc: "Pay now by card — you'll be sent to Stripe's test checkout",
+  },
   cod: {
     icon: "💵",
     label: "Cash on delivery",
@@ -59,6 +65,12 @@ const PAYMENT_META: Record<
 const GST_RATE = 0.05;
 const COD_RATE = 0.02;
 
+const TERMS_LABEL: Record<"net15" | "net30", string> = {
+  net15: "Net 15",
+  net30: "Net 30",
+};
+const TERMS_DAYS: Record<"net15" | "net30", number> = { net15: 15, net30: 30 };
+
 function tomorrowISO(): string {
   const d = new Date();
   d.setDate(d.getDate() + 1);
@@ -79,6 +91,7 @@ export function CheckoutClient({
     city: string | null;
     businessAddress: string | null;
     phone: string | null;
+    paymentTerms: "cod" | "net15" | "net30" | null;
   };
 }) {
   const router = useRouter();
@@ -97,7 +110,7 @@ export function CheckoutClient({
   const [deliveryWindow, setDeliveryWindow] = useState<DeliveryWindow>("morning");
   const [notes, setNotes] = useState("");
 
-  const [paymentOption, setPaymentOption] = useState<PaymentOption>("invoice");
+  const [paymentOption, setPaymentOption] = useState<PaymentOption>("card");
   const [agree, setAgree] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -119,12 +132,20 @@ export function CheckoutClient({
   async function handlePlaceOrder() {
     setSubmitting(true);
     setError(null);
+    const orderInput = {
+      items: items.map((i) => ({ productId: i.productId, variantId: i.variantId, qty: i.qty })),
+      delivery: { method, business, street, city, postalCode, phone, date, window: deliveryWindow, notes },
+      paymentOption,
+    };
     try {
-      const result = await placeOrder({
-        items: items.map((i) => ({ productId: i.productId, variantId: i.variantId, qty: i.qty })),
-        delivery: { method, business, street, city, postalCode, phone, date, window: deliveryWindow, notes },
-        paymentOption,
-      });
+      if (paymentOption === "card") {
+        // Cart is cleared on /checkout/success once Stripe confirms
+        // payment, not here — the browser is about to leave the app.
+        const { url } = await startStripeCheckout(orderInput);
+        window.location.href = url;
+        return;
+      }
+      const result = await placeOrder(orderInput);
       clear();
       setReceipt(result);
     } catch (err) {
@@ -156,6 +177,7 @@ export function CheckoutClient({
               </span>
             </div>
             {[
+              ["Business", business],
               ["Delivery date", date],
               ["Window", WINDOW_LABEL[deliveryWindow]],
               ["Payment", PAYMENT_META[paymentOption].label],
@@ -170,6 +192,9 @@ export function CheckoutClient({
               </div>
             ))}
           </div>
+
+          <WhatsNextSteps />
+
           <div className="flex flex-col gap-2">
             <a
               href="https://wa.me/17807227623"
@@ -184,6 +209,12 @@ export function CheckoutClient({
               className="rounded-xl border-[1.5px] border-neutral-200 py-3 text-[0.88rem] font-bold text-neutral-700"
             >
               Back to shop
+            </Link>
+            <Link
+              href="/account/orders"
+              className="py-1.5 text-center text-[0.82rem] font-bold text-primary-500"
+            >
+              View order history →
             </Link>
           </div>
         </div>
@@ -409,6 +440,20 @@ export function CheckoutClient({
             </div>
           )}
 
+          {paymentOption === "net_terms" &&
+            (account.paymentTerms === "net15" || account.paymentTerms === "net30" ? (
+              <div className="mb-4 rounded-2xl border-[1.5px] border-green-300 bg-green-50 px-3.5 py-3 text-[0.8rem] text-green-800">
+                ✓ Your account is approved for {TERMS_LABEL[account.paymentTerms]} terms. An
+                invoice will be emailed within 24 hours of delivery. Payment due within{" "}
+                {TERMS_DAYS[account.paymentTerms]} days.
+              </div>
+            ) : (
+              <div className="mb-4 rounded-2xl border-[1.5px] border-amber-300 bg-amber-50 px-3.5 py-3 text-[0.8rem] text-amber-800">
+                ⏳ Your account isn&apos;t yet approved for terms — contact us to set them up.
+                We&apos;ll follow up before confirming an order placed this way.
+              </div>
+            ))}
+
           <div className="mb-5 rounded-2xl border-[1.5px] border-neutral-200 bg-white p-4">
             {[
               ["Subtotal", subtotal],
@@ -541,7 +586,13 @@ export function CheckoutClient({
               onClick={handlePlaceOrder}
               className="flex-1 rounded-xl bg-primary-500 py-3.5 text-[0.92rem] font-extrabold text-white transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:bg-neutral-300"
             >
-              {submitting ? "Placing order…" : `Place order — $${total.toFixed(2)}`}
+              {submitting
+                ? paymentOption === "card"
+                  ? "Redirecting to Stripe…"
+                  : "Placing order…"
+                : paymentOption === "card"
+                  ? `Pay with card — $${total.toFixed(2)} →`
+                  : `Place order — $${total.toFixed(2)}`}
             </button>
           </div>
         </div>

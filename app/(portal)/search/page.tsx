@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { fetchAllProducts } from "@/lib/api/catalogue";
 import { useSavedProducts } from "@/lib/hooks/useSavedProducts";
 import { ProductCard } from "@/components/portal/ProductCard";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 type Sort = "default" | "price-asc" | "price-desc";
 
@@ -77,28 +78,16 @@ export default function SearchPage() {
       </div>
 
       {!query.trim() ? (
-        <div className="px-8 py-12 text-center">
-          <div className="mb-3 text-[3.5rem]">🔍</div>
-          <div className="mb-2 font-serif text-[1.2rem] font-bold text-neutral-900">
-            Search all products
-          </div>
-          <div className="text-[0.84rem] leading-relaxed text-neutral-500">
-            Search across beef, lamb, chicken, goat, fish, drinks and more by
-            name, type, or cut.
-          </div>
-        </div>
+        <EmptyState icon="🔍" title="Search all products">
+          Search across beef, lamb, chicken, goat, fish, drinks and more by
+          name, type, or cut.
+        </EmptyState>
       ) : isLoading ? (
         <div className="px-8 py-12 text-center text-[0.9rem] text-neutral-400">Loading…</div>
       ) : results.length === 0 ? (
-        <div className="px-8 py-12 text-center">
-          <div className="mb-3 text-[3.5rem]">😕</div>
-          <div className="mb-2 font-serif text-[1.2rem] font-bold text-neutral-900">
-            No results found
-          </div>
-          <div className="text-[0.84rem] leading-relaxed text-neutral-500">
-            Try a different search term — product name, cut, or category.
-          </div>
-        </div>
+        <EmptyState icon="😕" title="No results found">
+          Try a different search term — product name, cut, or category.
+        </EmptyState>
       ) : (
         <div className="flex flex-col gap-2.5 px-4 lg:grid lg:grid-cols-2 lg:px-0 xl:grid-cols-3">
           {results.map((p) => (

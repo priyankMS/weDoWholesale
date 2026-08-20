@@ -3,6 +3,13 @@ export { User } from "@/lib/db/models/User";
 export { PasswordReset } from "@/lib/db/models/PasswordReset";
 export { RevokedToken } from "@/lib/db/models/RevokedToken";
 export { SavedProduct } from "@/lib/db/models/SavedProduct";
+export { NotificationPreference } from "@/lib/db/models/NotificationPreference";
+export { AdminUser } from "@/lib/db/models/AdminUser";
+export { PlatformSetting } from "@/lib/db/models/PlatformSetting";
+export { MessageThread } from "@/lib/db/models/MessageThread";
+export { Message } from "@/lib/db/models/Message";
+export { Announcement } from "@/lib/db/models/Announcement";
+export { AnnouncementRead } from "@/lib/db/models/AnnouncementRead";
 
 // Mirrors of the client's existing retail-site database
 // (see lib/db/migrations/2026081410*.js — imported from wdh_db_backup.sql).

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const PAYMENT_OPTIONS = ["cod", "e_transfer", "invoice", "net_terms"] as const;
+export const PAYMENT_OPTIONS = ["card", "cod", "e_transfer", "invoice", "net_terms"] as const;
 export const DELIVERY_WINDOWS = ["morning", "afternoon"] as const;
 
 export const createOrderSchema = z.object({

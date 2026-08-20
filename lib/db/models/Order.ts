@@ -6,6 +6,7 @@ import {
   type InferCreationAttributes,
 } from "sequelize";
 import { sequelize } from "@/lib/db/sequelize";
+import { User } from "@/lib/db/models/User";
 
 export type PaymentMethod = "COD" | "Online";
 export type PaymentStatus = "Pending" | "Failed" | "Completed";
@@ -94,3 +95,10 @@ Order.init(
     modelName: "Order",
   },
 );
+
+// Admin Orders screen needs the customer's business/contact name per order
+// (getAdminOrderDetail / listAdminOrders in lib/db/queries/adminOrders.ts)
+// — the wholesale checkout flow itself only ever looks up Order by userId
+// directly, so this association wasn't needed until now.
+User.hasMany(Order, { foreignKey: "userId" });
+Order.belongsTo(User, { foreignKey: "userId" });

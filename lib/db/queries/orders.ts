@@ -47,14 +47,8 @@ export async function createOrder(
 ): Promise<OrderReceipt> {
   const user = await User.findByPk(userId);
   if (!user) throw new OrderError("Account not found");
-  // Phase 1's pending-review screen tells buyers "ordering is unlocked
-  // once your account is approved" — enforced here, not just implied by
-  // that copy, since this is the only place an order actually gets
-  // created.
   if (user.status !== "approved") {
-    throw new OrderError(
-      "Your account is still under review. You'll be able to place orders once it's approved.",
-    );
+    throw new OrderError("Your account is still under review — ordering unlocks once approved.");
   }
 
   const variants = await WdhVariant.findAll({
@@ -113,7 +107,7 @@ export async function createOrder(
     input.paymentOption === "cod" ? round2((subtotal + gstAmount) * COD_SURCHARGE_RATE) : 0;
   const finalAmount = round2(subtotal + gstAmount + codCharges);
   const paymentMethod =
-    input.paymentOption === "e_transfer" || input.paymentOption === "net_terms" ? "Online" : "COD";
+    input.paymentOption === "cod" ? "COD" : "Online";
 
   return sequelize.transaction(async (t) => {
     let shippingAddressId: number | null = null;
@@ -187,4 +181,38 @@ export async function createOrder(
 
     return { orderNumber: order.orderNumber, subtotal, gstAmount, codCharges, finalAmount };
   });
+}
+
+export type OrderSummary = {
+  orderNumber: string;
+  finalAmount: number;
+  paymentStatus: string;
+  deliveryDate: string | null;
+  timeSlot: string | null;
+  paymentOption: string | null;
+};
+
+export async function getOrderByNumber(
+  userId: number,
+  orderNumber: string,
+): Promise<OrderSummary | null> {
+  const order = await Order.findOne({ where: { userId, orderNumber } });
+  if (!order) return null;
+  return {
+    orderNumber: order.orderNumber,
+    finalAmount: Number(order.finalAmount),
+    paymentStatus: order.paymentStatus,
+    deliveryDate: order.deliveryDate,
+    timeSlot: order.timeSlot,
+    paymentOption: order.paymentOption,
+  };
+}
+
+// Idempotent — safe to call more than once for the same order (e.g. if a
+// buyer reloads the success page) since it only ever moves Pending → Completed.
+export async function markOrderPaid(orderNumber: string): Promise<void> {
+  await Order.update(
+    { paymentStatus: "Completed" },
+    { where: { orderNumber, paymentStatus: "Pending" } },
+  );
 }

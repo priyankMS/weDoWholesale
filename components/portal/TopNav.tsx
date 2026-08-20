@@ -9,14 +9,17 @@ const NAV_LINKS = [
   { href: "/search", label: "Search" },
   { href: "/saved", label: "Saved" },
   { href: "/halal-certs", label: "Halal certifications" },
+  { href: "/messages", label: "Messages" },
 ];
 
 export function TopNav({
   businessName,
   city,
+  hasUnread = false,
 }: {
   businessName: string | null;
   city: string | null;
+  hasUnread?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -47,11 +50,14 @@ export function TopNav({
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-[0.78rem] font-semibold transition-colors hover:text-neutral-900 ${
+                className={`relative text-[0.78rem] font-semibold transition-colors hover:text-neutral-900 ${
                   active ? "text-neutral-900" : "text-neutral-500"
                 }`}
               >
                 {link.label}
+                {link.href === "/messages" && hasUnread && (
+                  <span className="absolute -top-1.5 -right-2.5 h-1.75 w-1.75 rounded-full bg-primary-500" />
+                )}
               </Link>
             );
           })}
@@ -60,10 +66,17 @@ export function TopNav({
         <div className="flex items-center gap-4">
           <Link
             href="/account"
-            className="text-right text-[0.78rem] leading-tight font-semibold text-neutral-500 hover:text-neutral-900"
+            className="flex shrink-0 items-center gap-2 rounded-full border-[1.5px] border-primary-200 bg-white py-1.5 pr-3.5 pl-2 transition-colors hover:border-primary-500"
           >
-            {businessName ?? "Your account"}
-            {city && <div className="text-[0.66rem] text-neutral-400">{city}</div>}
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-[0.85rem]">
+              🏪
+            </span>
+            <span className="text-left leading-tight">
+              <span className="block text-[0.78rem] font-bold text-neutral-900">
+                {businessName ?? "Your account"}
+              </span>
+              {city && <span className="block text-[0.66rem] text-neutral-400">{city}</span>}
+            </span>
           </Link>
           <CartPill />
         </div>

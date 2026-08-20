@@ -36,9 +36,9 @@ export default function LoginPage() {
 
   async function onSubmit(values: LoginPayload) {
     try {
-      const data = await trigger(values);
+      const { status } = await trigger(values);
       toast.success("Welcome back!");
-      router.push(data.status === "approved" ? "/catalogue" : "/pending");
+      router.push(status === "approved" ? "/catalogue" : "/pending");
     } catch (err) {
       toast.error(getApiErrorMessage(err));
     }

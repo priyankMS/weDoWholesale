@@ -71,3 +71,28 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* Phase 8 (Utility and Error) — Screen 44 (/maintenance). Drifting meat
+   emoji + the "Live" status dot's blink used by the maintenance and 500
+   error pages. Not expressible with Tailwind's built-in animate-* utilities,
+   so registered here alongside the rest of the shared theme layer. */
+@keyframes wdh-drift {
+  0% {
+    transform: translateY(110vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.1;
+  }
+  90% {
+    opacity: 0.1;
+  }
+  100% {
+    transform: translateY(-10vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-wdh-drift {
+  animation: wdh-drift linear infinite;
+}

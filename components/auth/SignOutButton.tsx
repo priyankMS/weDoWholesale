@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import useSWRMutation from "swr/mutation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { logout } from "@/lib/api/auth";
 
@@ -16,6 +17,9 @@ export function SignOutButton() {
       // Sign the user out client-side regardless — an API/network failure
       // here shouldn't strand them on a page that thinks they're logged in.
     } finally {
+      // sonner (not the portal ToastProvider) since this button also
+      // renders outside the portal tree, e.g. app/(auth)/pending.
+      toast.success("Signed out");
       router.push("/login");
     }
   }

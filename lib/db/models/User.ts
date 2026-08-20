@@ -15,6 +15,7 @@ export type MonthlyVolume =
   | "200_500kg"
   | "500kg_plus";
 export type AccountStatus = "pending_review" | "approved" | "rejected";
+export type PaymentTerms = "cod" | "net15" | "net30";
 
 // Maps onto the client's existing `users` table — imported from their
 // production retail-site backup (67 real accounts). `userName` / `email` /
@@ -46,6 +47,11 @@ export class User extends Model<
   declare phone: string | null;
 
   declare status: CreationOptional<AccountStatus>;
+
+  // Wholesale-specific — payment terms (set by an admin once an account is
+  // approved for terms; null means COD/card only, no terms yet).
+  declare paymentTerms: PaymentTerms | null;
+  declare creditLimit: number | null;
 
   // Security
   declare tokenVersion: CreationOptional<number>;
@@ -104,6 +110,16 @@ User.init(
       type: DataTypes.ENUM("pending_review", "approved", "rejected"),
       allowNull: false,
       defaultValue: "pending_review",
+    },
+    paymentTerms: {
+      type: DataTypes.ENUM("cod", "net15", "net30"),
+      allowNull: true,
+      field: "payment_terms",
+    },
+    creditLimit: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      field: "credit_limit",
     },
     tokenVersion: {
       type: DataTypes.INTEGER.UNSIGNED,

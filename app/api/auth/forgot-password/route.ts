@@ -5,6 +5,8 @@ import { forgotPasswordSchema } from "@/lib/validation/auth";
 import { User } from "@/lib/db/models/User";
 import { PasswordReset } from "@/lib/db/models/PasswordReset";
 import { sha256Hex } from "@/lib/auth/hash";
+import { sendEmail } from "@/lib/email/send";
+import { passwordResetEmail } from "@/lib/email/templates";
 
 const RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
 const RESEND_COOLDOWN_MS = 60 * 1000; // 1 minute
@@ -41,10 +43,16 @@ export async function POST(request: Request) {
         expiresAt: new Date(Date.now() + RESET_TTL_MS),
       });
 
-      // TODO: wire up an email provider. Logged here for local development.
-      console.log(
-        `[password-reset] ${user.email} → /reset-password?token=${token}`,
-      );
+      const { subject, html, text } = passwordResetEmail({
+        email: user.email,
+        token,
+        generatedAtLabel: new Date().toLocaleString("en-CA", {
+          dateStyle: "long",
+          timeStyle: "short",
+          timeZone: "America/Edmonton",
+        }),
+      });
+      await sendEmail({ to: user.email, subject, html, text });
     }
   }
 

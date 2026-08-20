@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useCart, type CartItem } from "@/lib/cart/CartContext";
+import { useToast } from "@/components/portal/ToastProvider";
 import { QtyStepper } from "@/components/ui/QtyStepper";
 import { categoryGradient, productIcon } from "@/lib/productVisuals";
 
@@ -25,7 +26,13 @@ function groupBySupplier(items: CartItem[]): { supplierName: string | null; item
 
 export default function CartPage() {
   const { items, updateQty, removeItem, subtotal, totalQty } = useCart();
+  const showToast = useToast();
   const groups = useMemo(() => groupBySupplier(items), [items]);
+
+  function handleRemove(item: CartItem) {
+    removeItem(item.variantId);
+    showToast(`${item.name} removed from cart`);
+  }
 
   const gst = subtotal * GST_RATE;
   const total = subtotal + gst;
@@ -93,7 +100,8 @@ export default function CartPage() {
               <div className="divide-y divide-neutral-100">
                 {group.items.map((item) => (
                   <div key={item.variantId} className="relative flex items-start gap-3 p-3.5">
-                    <div
+                    <Link
+                      href={`/products/${item.productId}`}
                       className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[10px]"
                       style={
                         item.image ? undefined : { backgroundImage: categoryGradient(item.category) }
@@ -109,11 +117,14 @@ export default function CartPage() {
                       ) : (
                         <span className="text-[1.6rem]">{productIcon(item.category)}</span>
                       )}
-                    </div>
+                    </Link>
                     <div className="min-w-0 flex-1 pr-6">
-                      <div className="truncate text-[0.9rem] font-bold text-neutral-900">
+                      <Link
+                        href={`/products/${item.productId}`}
+                        className="block truncate text-[0.9rem] font-bold text-neutral-900 hover:text-primary-600"
+                      >
                         {item.name}
-                      </div>
+                      </Link>
                       {item.unit === "kg" && (
                         <div className="mt-0.25 text-[0.68rem] text-neutral-400">
                           ⚖️ est. weight — adjusted on delivery
@@ -131,7 +142,7 @@ export default function CartPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => removeItem(item.variantId)}
+                      onClick={() => handleRemove(item)}
                       aria-label={`Remove ${item.name} from cart`}
                       className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full text-[0.85rem] text-neutral-300 hover:bg-red-50 hover:text-red-500"
                     >

@@ -8,10 +8,15 @@ const NAV_ITEMS = [
   { href: "/search", icon: "🔍", label: "Search" },
   { href: "/saved", icon: "♡", label: "Saved" },
   { href: "/halal-certs", icon: "✓", label: "Halal" },
+  { href: "/messages", icon: "💬", label: "Inbox" },
   { href: "/account", icon: "👤", label: "Account" },
 ];
 
-export function BottomNav() {
+// `hasUnread` mirrors Screen 29's `.nav-unread` dot on the Inbox tab —
+// computed once per request in app/(portal)/layout.tsx (see
+// lib/db/queries/messages.ts's unreadThreadCount) and threaded down
+// through PortalShell, same as businessName/city.
+export function BottomNav({ hasUnread = false }: { hasUnread?: boolean }) {
   const pathname = usePathname();
 
   return (
@@ -29,7 +34,12 @@ export function BottomNav() {
               active ? "text-primary-500" : "text-neutral-400"
             }`}
           >
-            <span className="text-[1.25rem] leading-none">{item.icon}</span>
+            <span className="relative text-[1.25rem] leading-none">
+              {item.icon}
+              {item.href === "/messages" && hasUnread && (
+                <span className="absolute -top-0.5 -right-1 h-2 w-2 rounded-full border-[1.5px] border-white bg-primary-500" />
+              )}
+            </span>
             {item.label}
           </Link>
         );
