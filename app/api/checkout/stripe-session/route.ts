@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { createOrderSchema } from "@/lib/validation/orders";
 import { createOrder, OrderError } from "@/lib/db/queries/orders";
+import { getPlatformSettings } from "@/lib/db/queries/settings";
+import { Order } from "@/lib/db/models/Order";
 import { getStripe } from "@/lib/stripe";
 
 // Creates the order first (payment_status "Pending"), then a Stripe test-
@@ -38,6 +40,8 @@ export async function POST(request: Request) {
     throw err;
   }
 
+  const settings = await getPlatformSettings();
+
   let stripe;
   try {
     stripe = getStripe();
@@ -61,7 +65,7 @@ export async function POST(request: Request) {
       {
         price_data: {
           currency: "cad",
-          product_data: { name: "GST (5%)" },
+          product_data: { name: `GST (${settings.gstRatePercent}%)` },
           unit_amount: Math.round(receipt.gstAmount * 100),
         },
         quantity: 1,
@@ -75,6 +79,11 @@ export async function POST(request: Request) {
   if (!checkoutSession.url) {
     return NextResponse.json({ error: "Could not start Stripe checkout." }, { status: 500 });
   }
+
+  await Order.update(
+    { stripeSessionId: checkoutSession.id },
+    { where: { orderNumber: receipt.orderNumber } },
+  );
 
   return NextResponse.json({ url: checkoutSession.url });
 }

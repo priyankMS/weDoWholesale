@@ -7,6 +7,7 @@ import {
 } from "sequelize";
 import { sequelize } from "@/lib/db/sequelize";
 import { User } from "@/lib/db/models/User";
+import { safeAssociate } from "@/lib/db/associate";
 
 // One row per user — Phase 4 (Account Management)'s "Notification
 // preferences" screen. Didn't exist before this phase; created lazily
@@ -121,5 +122,7 @@ NotificationPreference.init(
   },
 );
 
-User.hasOne(NotificationPreference, { foreignKey: "userId" });
-NotificationPreference.belongsTo(User, { foreignKey: "userId" });
+safeAssociate(() => {
+  User.hasOne(NotificationPreference, { foreignKey: "userId" });
+  NotificationPreference.belongsTo(User, { foreignKey: "userId" });
+});

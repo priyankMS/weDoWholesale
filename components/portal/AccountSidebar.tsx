@@ -38,7 +38,7 @@ export function AccountSidebar({
   }
 
   return (
-    <div className="hidden w-65 shrink-0 border-r-[1.5px] border-neutral-200 bg-white py-6 lg:block">
+    <div className="sticky top-18 hidden max-h-[calc(100vh-4.5rem)] w-65 shrink-0 overflow-y-auto border-r-[1.5px] border-neutral-200 bg-white py-6 lg:block">
       <div className="mb-4 border-b border-neutral-200 px-5 pb-5">
         <div className="mb-2.5 flex h-14 w-14 items-center justify-center rounded-full border-[3px] border-primary-200 bg-primary-50 text-[1.6rem]">
           🏪

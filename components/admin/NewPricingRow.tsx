@@ -50,7 +50,7 @@ export function NewPricingRow({
 
   return (
     <tr className="border-b border-neutral-100 bg-amber-50/40 last:border-0">
-      <td className="px-4 py-2.5 font-mono text-[0.76rem] text-neutral-500">{variant.sku || "—"}</td>
+      <td className="px-4 py-2.5 font-mono text-[0.84rem] text-neutral-500">{variant.sku || "—"}</td>
       <td className="px-4 py-2.5 font-semibold text-neutral-900">{variant.productName}</td>
       <td className="px-4 py-2.5 text-neutral-600">{variant.variantLabel}</td>
       <td className="px-4 py-2.5">
@@ -99,7 +99,7 @@ export function NewPricingRow({
           type="button"
           onClick={handleAdd}
           disabled={saving}
-          className="rounded-md bg-green-600 px-3 py-1.5 text-[0.76rem] font-bold text-white hover:bg-green-700 disabled:opacity-40"
+          className="rounded-md bg-green-600 px-3 py-1.5 text-[0.84rem] font-bold text-white hover:bg-green-700 disabled:opacity-40"
         >
           {saving ? "…" : "+ Add"}
         </button>

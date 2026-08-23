@@ -32,12 +32,12 @@ export default async function AdminOrderDetailPage({
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <div className="rounded-xl border border-neutral-200 bg-white">
-            <div className="border-b border-neutral-200 px-4 py-3 text-[0.82rem] font-bold text-neutral-900">
+            <div className="border-b border-neutral-200 px-4 py-3 text-[0.9rem] font-bold text-neutral-900">
               Order Items
             </div>
-            <table className="w-full text-left text-[0.82rem]">
+            <table className="w-full text-left text-[0.9rem]">
               <thead>
-                <tr className="border-b border-neutral-100 text-[0.7rem] font-bold tracking-wide text-neutral-400 uppercase">
+                <tr className="border-b border-neutral-100 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
                   <th className="px-4 py-2">Product</th>
                   <th className="px-4 py-2">SKU</th>
                   <th className="px-4 py-2">Qty</th>
@@ -49,7 +49,7 @@ export default async function AdminOrderDetailPage({
                 {items.map((item) => (
                   <tr key={item.id} className="border-b border-neutral-100 last:border-0">
                     <td className="px-4 py-2.5 font-semibold text-neutral-900">{item.productName}</td>
-                    <td className="px-4 py-2.5 font-mono text-[0.76rem] text-neutral-500">
+                    <td className="px-4 py-2.5 font-mono text-[0.84rem] text-neutral-500">
                       {item.sku || "—"}
                     </td>
                     <td className="px-4 py-2.5 text-neutral-600">{Number(item.quantity)}</td>
@@ -73,34 +73,34 @@ export default async function AdminOrderDetailPage({
 
         <div className="space-y-4">
           <div className="rounded-xl border border-neutral-200 bg-white p-4">
-            <div className="mb-2 text-[0.7rem] font-bold tracking-wide text-neutral-400 uppercase">
+            <div className="mb-2 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
               Customer
             </div>
             <div className="text-[0.86rem] font-semibold text-neutral-900">
               {user?.businessName || user?.contactName || "—"}
             </div>
-            <div className="text-[0.78rem] text-neutral-500">{user?.email}</div>
-            <div className="text-[0.78rem] text-neutral-500">{user?.phone}</div>
+            <div className="text-[0.86rem] text-neutral-500">{user?.email}</div>
+            <div className="text-[0.86rem] text-neutral-500">{user?.phone}</div>
           </div>
 
           <div className="rounded-xl border border-neutral-200 bg-white p-4">
-            <div className="mb-2 text-[0.7rem] font-bold tracking-wide text-neutral-400 uppercase">
+            <div className="mb-2 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
               Delivery
             </div>
-            <div className="text-[0.82rem] text-neutral-700">{order.deliveryDate || "—"}</div>
-            <div className="text-[0.78rem] text-neutral-500">{order.timeSlot || "—"}</div>
-            <div className="text-[0.78rem] text-neutral-500">{order.shippingType || "—"}</div>
+            <div className="text-[0.9rem] text-neutral-700">{order.deliveryDate || "—"}</div>
+            <div className="text-[0.86rem] text-neutral-500">{order.timeSlot || "—"}</div>
+            <div className="text-[0.86rem] text-neutral-500">{order.shippingType || "—"}</div>
           </div>
 
           <div className="rounded-xl border border-neutral-200 bg-white p-4">
-            <div className="mb-2 text-[0.7rem] font-bold tracking-wide text-neutral-400 uppercase">
+            <div className="mb-2 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
               Payment
             </div>
-            <div className="flex justify-between py-0.5 text-[0.82rem]">
+            <div className="flex justify-between py-0.5 text-[0.9rem]">
               <span className="text-neutral-500">Subtotal</span>
               <span className="font-semibold text-neutral-900">${Number(order.totalAmount).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between py-0.5 text-[0.82rem]">
+            <div className="flex justify-between py-0.5 text-[0.9rem]">
               <span className="text-neutral-500">GST</span>
               <span className="font-semibold text-neutral-900">
                 ${Number(order.gstAmount ?? 0).toFixed(2)}
@@ -110,9 +110,47 @@ export default async function AdminOrderDetailPage({
               <span className="font-bold text-neutral-900">Total</span>
               <span className="font-bold text-neutral-900">${Number(order.finalAmount).toFixed(2)}</span>
             </div>
-            <div className="mt-2 text-[0.76rem] text-neutral-500">
+            <div className="mt-2 text-[0.84rem] text-neutral-500">
               {order.paymentMethod} · {order.paymentStatus}
             </div>
+            {order.paymentMethod === "Online" && (
+              <div className="mt-3 space-y-1.5 border-t border-neutral-100 pt-3 text-[0.86rem]">
+                {order.cardBrand && order.cardLast4 && (
+                  <div className="flex justify-between">
+                    <span className="text-neutral-500">Card</span>
+                    <span className="font-semibold text-neutral-900">
+                      {order.cardBrand} •••• {order.cardLast4}
+                    </span>
+                  </div>
+                )}
+                {order.stripePaymentIntentId && (
+                  <div className="flex justify-between gap-2">
+                    <span className="shrink-0 text-neutral-500">Payment intent</span>
+                    <span className="truncate font-mono text-[0.8rem] text-neutral-700">
+                      {order.stripePaymentIntentId}
+                    </span>
+                  </div>
+                )}
+                {order.paidAt && (
+                  <div className="flex justify-between">
+                    <span className="text-neutral-500">Paid at</span>
+                    <span className="font-semibold text-neutral-900">
+                      {new Date(order.paidAt).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {order.receiptUrl && (
+                  <a
+                    href={order.receiptUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 inline-block font-bold text-red-600 hover:underline"
+                  >
+                    View Stripe receipt ↗
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

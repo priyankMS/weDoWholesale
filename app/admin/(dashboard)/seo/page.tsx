@@ -14,7 +14,7 @@ function StatusBadge({ status }: { status: "complete" | "missing" | "warning" })
   } as const;
   const labels = { complete: "Complete", warning: "Warning", missing: "Missing" } as const;
   return (
-    <span className={`rounded-full px-2 py-0.5 text-[0.7rem] font-bold ${styles[status]}`}>
+    <span className={`rounded-full px-2 py-0.5 text-[0.78rem] font-bold ${styles[status]}`}>
       {labels[status]}
     </span>
   );
@@ -54,7 +54,7 @@ export default async function AdminSeoPage({
     <div className="p-6">
       <div className="mb-5">
         <h1 className="font-serif text-xl font-black text-neutral-900">SEO Manager</h1>
-        <p className="text-[0.82rem] text-neutral-500">{missingCount} products need attention</p>
+        <p className="text-[0.9rem] text-neutral-500">{missingCount} products need attention</p>
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
@@ -74,7 +74,7 @@ export default async function AdminSeoPage({
           </select>
           <button
             type="submit"
-            className="rounded-lg bg-neutral-900 px-4 py-2 text-[0.82rem] font-bold text-white hover:bg-neutral-800"
+            className="rounded-lg bg-neutral-900 px-4 py-2 text-[0.9rem] font-bold text-white hover:bg-neutral-800"
           >
             Filter
           </button>
@@ -88,7 +88,7 @@ export default async function AdminSeoPage({
               <Link
                 key={label}
                 href={filterHref(value)}
-                className={`rounded-lg px-3 py-1.5 text-[0.78rem] font-bold ${
+                className={`rounded-lg px-3 py-1.5 text-[0.86rem] font-bold ${
                   active ? "bg-red-600 text-white" : "bg-white text-neutral-600 hover:bg-neutral-100"
                 }`}
               >
@@ -100,9 +100,9 @@ export default async function AdminSeoPage({
       </div>
 
       <AdminTableCard>
-        <table className="w-full text-left text-[0.82rem]">
+        <table className="w-full text-left text-[0.9rem]">
           <thead>
-            <tr className="border-b border-neutral-100 text-[0.7rem] font-bold tracking-wide text-neutral-400 uppercase">
+            <tr className="border-b border-neutral-100 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
               <th className="px-4 py-2.5">Product / SKU</th>
               <th className="px-4 py-2.5">Category</th>
               <th className="px-4 py-2.5">Meta Title</th>
@@ -119,7 +119,7 @@ export default async function AdminSeoPage({
               <tr key={r.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
                 <td className="px-4 py-2.5">
                   <div className="font-semibold text-neutral-900">{r.name}</div>
-                  <div className="font-mono text-[0.7rem] text-neutral-400">{r.sku || "—"}</div>
+                  <div className="font-mono text-[0.78rem] text-neutral-400">{r.sku || "—"}</div>
                 </td>
                 <td className="px-4 py-2.5 text-neutral-600">{r.category}</td>
                 <td className="max-w-[220px] truncate px-4 py-2.5 text-neutral-600">

@@ -20,7 +20,7 @@ export default async function AdminSupplierComparePage({
     <div className="p-6">
       <div className="mb-5">
         <h1 className="font-serif text-xl font-black text-neutral-900">Supplier Compare</h1>
-        <p className="text-[0.82rem] text-neutral-500">
+        <p className="text-[0.9rem] text-neutral-500">
           Comparing {suppliers.length} suppliers · {sharedCount} shared products
         </p>
       </div>
@@ -38,7 +38,7 @@ export default async function AdminSupplierComparePage({
             </option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 text-[0.82rem] text-neutral-600">
+        <label className="flex items-center gap-1.5 text-[0.9rem] text-neutral-600">
           <input
             type="checkbox"
             name="conflicts"
@@ -50,16 +50,16 @@ export default async function AdminSupplierComparePage({
         </label>
         <button
           type="submit"
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-[0.82rem] font-bold text-white hover:bg-neutral-800"
+          className="rounded-lg bg-neutral-900 px-4 py-2 text-[0.9rem] font-bold text-white hover:bg-neutral-800"
         >
           Filter
         </button>
       </form>
 
       <AdminTableCard>
-        <table className="w-full text-left text-[0.82rem]">
+        <table className="w-full text-left text-[0.9rem]">
           <thead>
-            <tr className="border-b border-neutral-100 text-[0.7rem] font-bold tracking-wide text-neutral-400 uppercase">
+            <tr className="border-b border-neutral-100 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
               <th className="px-4 py-2.5">Product / Variant</th>
               {suppliers.map((s) => (
                 <th key={s.id} className="px-4 py-2.5">
@@ -76,7 +76,7 @@ export default async function AdminSupplierComparePage({
               >
                 <td className="px-4 py-2.5">
                   <div className="font-semibold text-neutral-900">{row.productName}</div>
-                  <div className="text-[0.74rem] text-neutral-400">{row.variantLabel}</div>
+                  <div className="text-[0.82rem] text-neutral-400">{row.variantLabel}</div>
                 </td>
                 {suppliers.map((s) => {
                   const price = row.prices.get(s.id);
@@ -88,7 +88,7 @@ export default async function AdminSupplierComparePage({
                           className={`font-semibold ${isCheapest ? "text-green-700" : "text-neutral-700"}`}
                         >
                           ${price.toFixed(2)}
-                          {isCheapest && <span className="ml-1 text-[0.7rem]">✓ Cheapest</span>}
+                          {isCheapest && <span className="ml-1 text-[0.78rem]">✓ Cheapest</span>}
                         </span>
                       ) : (
                         <span className="text-neutral-300">—</span>

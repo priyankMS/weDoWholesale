@@ -27,7 +27,7 @@ const MEAT_CATEGORIES = new Set(["Beef", "Chicken", "Lamb", "Goat", "Fish"]);
 // A handful of obviously junk rows left over in the imported staging data
 // ("beef test", "chicken test", "lamb test", "Fish test") — filtered out
 // rather than shown to real wholesale buyers.
-const TEST_ITEM_NAMES = ["beef test", "chicken test", "lamb test", "Fish test"];
+export const TEST_ITEM_NAMES = ["beef test", "chicken test", "lamb test", "Fish test"];
 
 export function categorySlug(category: string): string {
   return category.toLowerCase().trim();
@@ -125,17 +125,19 @@ function toSummary(product: WdhProduct): ProductSummary {
       price,
       stockCount: v.stockCount ?? 0,
       stockState,
-      image: v.image1 || v.thumbnail || null,
+      // The client's photo library (images.wedohalal.com) is unreliable —
+      // wrong/mismatched cuts, some 404s (see ProductCard's onError note) —
+      // so every product card intentionally uses the category icon +
+      // gradient tile (productIcon/categoryGradient in lib/productVisuals)
+      // instead of a per-product photo, matching the Dropbox mockup's
+      // generic 🥩 icon treatment rather than showing incorrect photos.
+      image: null,
       supplierName,
     };
   });
 
   const prices = variants.map((v) => v.price).filter((p): p is number => p != null);
-  const productImage =
-    variants.find((v) => v.price != null && v.image)?.image ??
-    variants.find((v) => v.image)?.image ??
-    product.thumbnail ??
-    null;
+  const productImage = null;
   const stockStates = variants.map((v) => v.stockState);
   const overallStock: StockState = stockStates.includes("in")
     ? "in"
@@ -218,6 +220,7 @@ export type ProductQueryParams = {
 
 export type ProductFacets = {
   types: string[];
+  typeCounts: Record<string, number>;
   condition: string[];
   bone: string[];
   skin: string[];
@@ -274,23 +277,30 @@ export async function queryProducts(params: ProductQueryParams): Promise<Product
       { type: { [Op.like]: `%${trimmedSearch}%` } },
     ];
   }
-  if (type && type !== "All") where.type = type;
-
   const rows = await WdhProduct.findAll({ where, include: productInclude, order: [["item", "ASC"]] });
   let products = rows.map(toSummary);
 
-  // Facet option lists reflect the category+search+type scope (what a
-  // faceted-search UI conventionally shows) — computed before the
-  // condition/bone/skin/stock/price filters below are applied, so picking
-  // one facet doesn't hide the others still reachable from here.
+  // Facet option lists reflect the category+search scope only (what a
+  // faceted-search UI conventionally shows) — computed before the type
+  // filter below (and the condition/bone/skin/stock/price filters further
+  // down) are applied, so picking one facet doesn't hide the others still
+  // reachable from here.
+  const typeCounts: Record<string, number> = {};
+  for (const r of rows) {
+    if (!r.type || !r.type.trim()) continue;
+    typeCounts[r.type] = (typeCounts[r.type] ?? 0) + 1;
+  }
+
   const facets: ProductFacets = {
     types: uniqueSorted(rows.map((r) => r.type)),
+    typeCounts,
     condition: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.conditionType))),
     bone: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.boneType))),
     skin: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.skinType))),
   };
 
   products = products.filter((p) => {
+    if (type && type !== "All" && p.type !== type) return false;
     if (condition.length && !p.variants.some((v) => v.conditionType && condition.includes(v.conditionType)))
       return false;
     if (bone.length && !p.variants.some((v) => v.boneType && bone.includes(v.boneType))) return false;

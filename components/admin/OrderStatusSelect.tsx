@@ -44,7 +44,7 @@ export function OrderStatusSelect({ orderId, status }: { orderId: number; status
       value={current}
       disabled={saving}
       onChange={(e) => handleChange(e.target.value as OrderStatus)}
-      className={`cursor-pointer rounded-full border-none px-2.5 py-1 text-[0.72rem] font-bold outline-none disabled:opacity-60 ${STATUS_STYLES[current]}`}
+      className={`cursor-pointer rounded-full border-none px-2.5 py-1 text-[0.8rem] font-bold outline-none disabled:opacity-60 ${STATUS_STYLES[current]}`}
     >
       {STATUSES.map((s) => (
         <option key={s} value={s}>

@@ -45,7 +45,7 @@ export function PricingRow({ row }: { row: AdminPricingRow }) {
 
   return (
     <tr className={`border-b border-neutral-100 last:border-0 ${lowMargin ? "bg-red-50/50" : "hover:bg-neutral-50"}`}>
-      <td className="px-4 py-2.5 font-mono text-[0.76rem] text-neutral-500">{row.sku || "—"}</td>
+      <td className="px-4 py-2.5 font-mono text-[0.84rem] text-neutral-500">{row.sku || "—"}</td>
       <td className="px-4 py-2.5 font-semibold text-neutral-900">{row.productName}</td>
       <td className="px-4 py-2.5 text-neutral-600">{row.variantLabel}</td>
       <td className="px-4 py-2.5 text-neutral-600">{row.supplierName || "—"}</td>
@@ -93,7 +93,7 @@ export function PricingRow({ row }: { row: AdminPricingRow }) {
           type="button"
           onClick={handleSave}
           disabled={!dirty || saving}
-          className="rounded-md bg-red-600 px-3 py-1.5 text-[0.76rem] font-bold text-white hover:bg-red-700 disabled:opacity-40"
+          className="rounded-md bg-red-600 px-3 py-1.5 text-[0.84rem] font-bold text-white hover:bg-red-700 disabled:opacity-40"
         >
           {saving ? "…" : "Save"}
         </button>

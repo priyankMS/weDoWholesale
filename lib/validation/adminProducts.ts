@@ -10,6 +10,13 @@ export const adminProductUpdateSchema = z.object({
   metaTitle: z.string().trim().max(255).nullable().optional(),
   metaDesc: z.string().trim().max(500).nullable().optional(),
   thumbnailAlt: z.string().trim().max(255).nullable().optional(),
+  thumbnail: z.string().trim().max(2000).nullable().optional(),
+  image1: z.string().trim().max(2000).nullable().optional(),
+  image1Alt: z.string().trim().max(255).nullable().optional(),
+  image2: z.string().trim().max(2000).nullable().optional(),
+  image2Alt: z.string().trim().max(255).nullable().optional(),
+  image3: z.string().trim().max(2000).nullable().optional(),
+  image3Alt: z.string().trim().max(255).nullable().optional(),
 });
 
 export type AdminProductUpdateInput = z.infer<typeof adminProductUpdateSchema>;

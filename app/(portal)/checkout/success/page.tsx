@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { getStripe } from "@/lib/stripe";
-import { getOrderByNumber, markOrderPaid } from "@/lib/db/queries/orders";
+import { getOrderByNumber } from "@/lib/db/queries/orders";
 import { User } from "@/lib/db/models/User";
 import { ClearCartOnMount } from "@/components/portal/ClearCartOnMount";
 import { WhatsNextSteps } from "@/components/portal/WhatsNextSteps";
@@ -38,14 +38,43 @@ export default async function CheckoutSuccessPage({
     );
   }
 
-  await markOrderPaid(orderNumber);
-  const [order, user] = await Promise.all([
-    getOrderByNumber(session.userId, orderNumber),
-    User.findByPk(session.userId),
-  ]);
+  // Stripe confirms payment server-to-server via the webhook
+  // (app/api/webhooks/stripe), which is the only thing that writes
+  // paymentStatus/receipt data — this page just waits briefly for it to
+  // land rather than trusting the client redirect to mark anything paid.
+  let order = await getOrderByNumber(session.userId, orderNumber);
+  for (let attempt = 0; attempt < 5 && order?.paymentStatus === "Pending"; attempt++) {
+    await new Promise((r) => setTimeout(r, 600));
+    order = await getOrderByNumber(session.userId, orderNumber);
+  }
+  const user = await User.findByPk(session.userId);
 
   if (!order) {
     return <ErrorCard message="Order not found on your account." />;
+  }
+
+  if (order.paymentStatus === "Pending") {
+    return (
+      <div className="mx-4 mt-6 mb-8 max-w-md rounded-2xl border-[1.5px] border-neutral-200 bg-white p-6 text-center lg:mx-auto">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-2xl">
+          ⏳
+        </div>
+        <div className="mb-1.5 font-serif text-[1.1rem] font-black text-neutral-900">
+          Confirming your payment…
+        </div>
+        <div className="mb-5 text-[0.86rem] leading-relaxed text-neutral-500">
+          Stripe confirmed your card payment — we&rsquo;re just finishing up on our end.
+          You&rsquo;ll see this order marked Paid on your account shortly, and we&rsquo;ll email
+          you a confirmation.
+        </div>
+        <Link
+          href="/account/orders"
+          className="inline-block rounded-full bg-primary-500 px-5 py-2.5 text-[0.86rem] font-bold text-white hover:bg-primary-600"
+        >
+          View order history →
+        </Link>
+      </div>
+    );
   }
 
   return (

@@ -12,6 +12,9 @@ export type AdminOrderRow = {
   orderStatus: OrderStatus | null;
   deliveryDate: string | null;
   createdAt: Date;
+  paymentMethod: string | null;
+  paymentStatus: string;
+  paidAt: Date | null;
 };
 
 export type AdminOrderListParams = {
@@ -67,6 +70,9 @@ export async function listAdminOrders(params: AdminOrderListParams): Promise<Adm
       orderStatus: o.orderStatus ?? null,
       deliveryDate: o.deliveryDate,
       createdAt: o.createdAt,
+      paymentMethod: o.paymentMethod,
+      paymentStatus: o.paymentStatus,
+      paidAt: o.paidAt,
     };
   });
 

@@ -7,6 +7,7 @@ import {
 } from "sequelize";
 import { sequelize } from "@/lib/db/sequelize";
 import { Product } from "@/lib/db/models/Product";
+import { safeAssociate } from "@/lib/db/associate";
 
 // The older, generic EAV-style variant system — superseded for wholesale
 // by wdh_variants, but still referenced by ProductVariantValue.
@@ -37,5 +38,7 @@ ProductVariant.init(
   },
 );
 
-Product.hasMany(ProductVariant, { foreignKey: "productId" });
-ProductVariant.belongsTo(Product, { foreignKey: "productId" });
+safeAssociate(() => {
+  Product.hasMany(ProductVariant, { foreignKey: "productId" });
+  ProductVariant.belongsTo(Product, { foreignKey: "productId" });
+});

@@ -7,6 +7,7 @@ import {
 } from "sequelize";
 import { sequelize } from "@/lib/db/sequelize";
 import { User } from "@/lib/db/models/User";
+import { safeAssociate } from "@/lib/db/associate";
 
 export class PasswordReset extends Model<
   InferAttributes<PasswordReset>,
@@ -43,5 +44,7 @@ PasswordReset.init(
   },
 );
 
-User.hasMany(PasswordReset, { foreignKey: "userId" });
-PasswordReset.belongsTo(User, { foreignKey: "userId" });
+safeAssociate(() => {
+  User.hasMany(PasswordReset, { foreignKey: "userId" });
+  PasswordReset.belongsTo(User, { foreignKey: "userId" });
+});

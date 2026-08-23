@@ -70,7 +70,7 @@ export default async function AdminCustomersPage({
     <div className="p-6">
       <div className="mb-5">
         <h1 className="font-serif text-xl font-black text-neutral-900">Customers</h1>
-        <p className="text-[0.82rem] text-neutral-500">
+        <p className="text-[0.9rem] text-neutral-500">
           Wholesale account applications — approve or reject sign-ups. Only approved accounts can
           check out.
         </p>
@@ -104,7 +104,7 @@ export default async function AdminCustomersPage({
           />
           <button
             type="submit"
-            className="rounded-lg bg-neutral-900 px-4 py-2 text-[0.82rem] font-bold text-white hover:bg-neutral-800"
+            className="rounded-lg bg-neutral-900 px-4 py-2 text-[0.9rem] font-bold text-white hover:bg-neutral-800"
           >
             Search
           </button>
@@ -112,9 +112,9 @@ export default async function AdminCustomersPage({
       </div>
 
       <AdminTableCard>
-        <table className="w-full text-left text-[0.82rem]">
+        <table className="w-full text-left text-[0.9rem]">
           <thead>
-            <tr className="border-b border-neutral-100 text-[0.7rem] font-bold tracking-wide text-neutral-400 uppercase">
+            <tr className="border-b border-neutral-100 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
               <th className="px-4 py-2.5">Business</th>
               <th className="px-4 py-2.5">Contact</th>
               <th className="px-4 py-2.5">City</th>
@@ -133,8 +133,8 @@ export default async function AdminCustomersPage({
                 </td>
                 <td className="px-4 py-2.5 text-neutral-600">
                   <div>{c.contactName || "—"}</div>
-                  <div className="text-[0.72rem] text-neutral-400">{c.email}</div>
-                  {c.phone && <div className="text-[0.72rem] text-neutral-400">{c.phone}</div>}
+                  <div className="text-[0.8rem] text-neutral-400">{c.email}</div>
+                  {c.phone && <div className="text-[0.8rem] text-neutral-400">{c.phone}</div>}
                 </td>
                 <td className="px-4 py-2.5 text-neutral-600">{c.city || "—"}</td>
                 <td className="px-4 py-2.5 text-neutral-600 capitalize">{c.businessType || "—"}</td>
@@ -145,7 +145,7 @@ export default async function AdminCustomersPage({
                   {new Date(c.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-4 py-2.5">
-                  <span className={`rounded-full px-2 py-0.5 text-[0.7rem] font-bold ${STATUS_BADGE[c.status]}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-[0.78rem] font-bold ${STATUS_BADGE[c.status]}`}>
                     {STATUS_LABEL[c.status]}
                   </span>
                 </td>

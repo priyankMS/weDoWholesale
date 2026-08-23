@@ -91,10 +91,10 @@ function Group({
 }) {
   return (
     <>
-      <div className="px-4 pt-3.5 pb-1.5 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase lg:px-0">
+      <div className="px-4 pt-5 pb-2 text-[0.68rem] font-extrabold tracking-widest text-neutral-400 uppercase lg:px-0 lg:pt-6">
         {title}
       </div>
-      <div className="mx-4 mb-1 divide-y divide-neutral-200 overflow-hidden rounded-2xl border-[1.5px] border-neutral-200 bg-white lg:mx-0">
+      <div className="mx-4 mb-1 divide-y divide-neutral-200 overflow-hidden rounded-2xl border-[1.5px] border-neutral-200 bg-white shadow-sm lg:mx-0">
         {toggles.map((t) => (
           <div key={t.key} className="flex items-center justify-between gap-3.5 px-4 py-3.5">
             <div className="flex-1">
@@ -144,8 +144,8 @@ export function NotificationPreferencesForm({
       <Group title="Email notifications" toggles={EMAIL_TOGGLES} values={values} onChange={set} />
       <Group title="Promotional" toggles={PROMO_TOGGLES} values={values} onChange={set} />
 
-      <div className="px-4 pt-1 lg:px-0">
-        <Button type="button" onClick={handleSave} disabled={saving}>
+      <div className="px-4 pt-3 pb-2 lg:px-0">
+        <Button type="button" onClick={handleSave} disabled={saving} className="lg:w-auto lg:px-8">
           {saving ? "Saving…" : "Save preferences"}
         </Button>
       </div>

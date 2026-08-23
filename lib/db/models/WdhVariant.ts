@@ -91,5 +91,8 @@ WdhVariant.init(
   },
 );
 
-WdhProduct.hasMany(WdhVariant, { foreignKey: "productId", as: "variants" });
-WdhVariant.belongsTo(WdhProduct, { foreignKey: "productId" });
+
+if (!WdhProduct.associations.variants) {
+  WdhProduct.hasMany(WdhVariant, { foreignKey: "productId", as: "variants" });
+  WdhVariant.belongsTo(WdhProduct, { foreignKey: "productId" });
+}

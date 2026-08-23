@@ -163,6 +163,41 @@ export default async function OrderDetailPage({
         </div>
       </div>
 
+      <div className="px-4 pt-3.5 pb-1.5 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase lg:px-0">
+        Payment
+      </div>
+      <div className="mx-4 mb-1 divide-y divide-neutral-200 overflow-hidden rounded-2xl border-[1.5px] border-neutral-200 bg-white lg:mx-0">
+        <TotalRow
+          label="Method"
+          value={
+            order.paymentMethod === "Online"
+              ? order.cardBrand && order.cardLast4
+                ? `${order.cardBrand} •••• ${order.cardLast4}`
+                : "Card (Stripe)"
+              : "Cash on delivery"
+          }
+        />
+        {order.paidAt && <TotalRow label="Paid on" value={formatDateTime(order.paidAt)} />}
+        {order.paymentMethod === "Online" && (
+          <div className="px-4 py-3.25">
+            {order.receiptUrl ? (
+              <a
+                href={order.receiptUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-neutral-200 py-2.5 text-[0.82rem] font-bold text-primary-600 hover:bg-primary-50"
+              >
+                ⬇ Download receipt
+              </a>
+            ) : (
+              <div className="text-center text-[0.78rem] text-neutral-400">
+                Receipt will appear here once payment is confirmed.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {order.revisions.length > 0 && (
         <>
           <div className="px-4 pt-3.5 pb-1.5 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase lg:px-0">

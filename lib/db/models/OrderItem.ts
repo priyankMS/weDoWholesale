@@ -7,6 +7,7 @@ import {
 } from "sequelize";
 import { sequelize } from "@/lib/db/sequelize";
 import { Order } from "@/lib/db/models/Order";
+import { safeAssociate } from "@/lib/db/associate";
 
 export class OrderItem extends Model<
   InferAttributes<OrderItem>,
@@ -43,5 +44,7 @@ OrderItem.init(
   },
 );
 
-Order.hasMany(OrderItem, { foreignKey: "orderId" });
-OrderItem.belongsTo(Order, { foreignKey: "orderId" });
+safeAssociate(() => {
+  Order.hasMany(OrderItem, { foreignKey: "orderId" });
+  OrderItem.belongsTo(Order, { foreignKey: "orderId" });
+});

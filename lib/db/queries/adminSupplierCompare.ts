@@ -1,8 +1,10 @@
+import { Op } from "sequelize";
 import { WdhVariant } from "@/lib/db/models/WdhVariant";
 import { WdhProduct } from "@/lib/db/models/WdhProduct";
 import { WdhVariantPricing } from "@/lib/db/models/WdhVariantPricing";
 import { WdhSupplier } from "@/lib/db/models/WdhSupplier";
 import { variantLabel } from "@/lib/format";
+import { TEST_ITEM_NAMES } from "@/lib/db/queries/catalogue";
 
 export type SupplierPriceCell = {
   supplierId: number;
@@ -30,7 +32,7 @@ export type SupplierCompareResult = {
 export async function getSupplierCompareData(category?: string): Promise<SupplierCompareResult> {
   const suppliers = await WdhSupplier.findAll({ order: [["sortOrder", "ASC"]] });
 
-  const productWhere: Record<string, unknown> = {};
+  const productWhere: Record<string, unknown> = { item: { [Op.notIn]: TEST_ITEM_NAMES } };
   if (category && category !== "All") productWhere.category = category;
 
   const variants = await WdhVariant.findAll({

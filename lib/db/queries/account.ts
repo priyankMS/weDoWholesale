@@ -101,6 +101,7 @@ export type OrderDetail = {
   createdAt: Date;
   updatedAt: Date;
   orderStatus: OrderStatus | null;
+  paymentMethod: string | null;
   paymentStatus: string;
   paymentOption: string | null;
   totalAmount: number;
@@ -110,6 +111,10 @@ export type OrderDetail = {
   finalAmount: number;
   deliveryDate: string | null;
   timeSlot: string | null;
+  receiptUrl: string | null;
+  paidAt: Date | null;
+  cardBrand: string | null;
+  cardLast4: string | null;
   items: OrderDetailItem[];
   revisions: RevisionEntry[];
 };
@@ -136,6 +141,7 @@ export async function getOrderDetail(
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
     orderStatus: order.orderStatus,
+    paymentMethod: order.paymentMethod,
     paymentStatus: order.paymentStatus,
     paymentOption: order.paymentOption,
     totalAmount: Number(order.totalAmount),
@@ -145,6 +151,10 @@ export async function getOrderDetail(
     finalAmount: Number(order.finalAmount),
     deliveryDate: order.deliveryDate,
     timeSlot: order.timeSlot,
+    receiptUrl: order.receiptUrl,
+    paidAt: order.paidAt,
+    cardBrand: order.cardBrand,
+    cardLast4: order.cardLast4,
     items: items.map((i) => ({
       productName: i.productName ?? `Item #${i.productId}`,
       sku: i.sku,

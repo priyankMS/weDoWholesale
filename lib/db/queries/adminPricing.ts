@@ -132,6 +132,46 @@ export async function listVariantsWithoutPricing(): Promise<VariantWithoutPricin
   });
 }
 
+export type ProductPricingVariant = {
+  variantId: number;
+  sku: string | null;
+  variantLabel: string;
+  rows: AdminPricingRow[];
+};
+
+// Powers the product detail panel's Pricing tab — every variant of one
+// product, each with its own pricing rows (one per supplier), so the whole
+// tab can render from a single fetch.
+export async function getPricingForProduct(productId: number): Promise<ProductPricingVariant[]> {
+  const variants = await WdhVariant.findAll({
+    where: { productId },
+    include: [{ model: WdhVariantPricing, as: "pricing", include: [{ model: WdhSupplier }] }],
+    order: [["id", "ASC"]],
+  });
+
+  return variants.map((v) => {
+    const rows: AdminPricingRow[] = (v.pricing ?? []).map((p) => {
+      const supplier = (p as WdhVariantPricing & { WdhSupplier?: WdhSupplier }).WdhSupplier;
+      const dealerPrice = p.dealerPrice != null ? Number(p.dealerPrice) : null;
+      const retailPrice = p.retailPrice != null ? Number(p.retailPrice) : null;
+      return {
+        id: p.id,
+        variantId: v.id,
+        sku: v.sku,
+        productName: "",
+        variantLabel: variantLabel(v),
+        supplierId: p.supplierId,
+        supplierName: supplier?.name ?? null,
+        dealerPrice,
+        priceIncrement: p.priceIncrement != null ? Number(p.priceIncrement) : null,
+        retailPrice,
+        marginPercent: marginPercent(dealerPrice, retailPrice),
+      };
+    });
+    return { variantId: v.id, sku: v.sku, variantLabel: variantLabel(v), rows };
+  });
+}
+
 export async function createAdminPricing(input: AdminPricingCreateInput): Promise<WdhVariantPricing> {
   return WdhVariantPricing.create({
     variantId: input.variantId,

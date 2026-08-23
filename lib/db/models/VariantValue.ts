@@ -7,6 +7,7 @@ import {
 } from "sequelize";
 import { sequelize } from "@/lib/db/sequelize";
 import { VariantType } from "@/lib/db/models/VariantType";
+import { safeAssociate } from "@/lib/db/associate";
 
 // e.g. "Large", "Bone-In" — a specific value belonging to a VariantType.
 export class VariantValue extends Model<
@@ -32,5 +33,7 @@ VariantValue.init(
   },
 );
 
-VariantType.hasMany(VariantValue, { foreignKey: "variantTypeId" });
-VariantValue.belongsTo(VariantType, { foreignKey: "variantTypeId" });
+safeAssociate(() => {
+  VariantType.hasMany(VariantValue, { foreignKey: "variantTypeId" });
+  VariantValue.belongsTo(VariantType, { foreignKey: "variantTypeId" });
+});

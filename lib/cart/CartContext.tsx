@@ -57,8 +57,9 @@ async function loadCart(): Promise<CartItem[]> {
 function persist(items: CartItem[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch {
+  } catch (err) {
     // Storage full/blocked — cart still works for the session, just won't survive a reload.
+    console.error("Cart failed to persist to localStorage:", err);
   }
 }
 

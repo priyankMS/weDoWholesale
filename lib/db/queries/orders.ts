@@ -8,10 +8,10 @@ import { WdhProduct } from "@/lib/db/models/WdhProduct";
 import { WdhVariantPricing } from "@/lib/db/models/WdhVariantPricing";
 import { User } from "@/lib/db/models/User";
 import { bestVariantPrice } from "@/lib/db/queries/catalogue";
+import { getPlatformSettings } from "@/lib/db/queries/settings";
 import { variantLabel } from "@/lib/format";
 import type { CreateOrderInput } from "@/lib/validation/orders";
 
-const GST_RATE = 0.05;
 const COD_SURCHARGE_RATE = 0.02;
 
 const WINDOW_LABEL: Record<string, string> = {
@@ -45,7 +45,7 @@ export async function createOrder(
   userId: number,
   input: CreateOrderInput,
 ): Promise<OrderReceipt> {
-  const user = await User.findByPk(userId);
+  const [user, settings] = await Promise.all([User.findByPk(userId), getPlatformSettings()]);
   if (!user) throw new OrderError("Account not found");
   if (user.status !== "approved") {
     throw new OrderError("Your account is still under review — ordering unlocks once approved.");
@@ -102,7 +102,7 @@ export async function createOrder(
   }
   subtotal = round2(subtotal);
 
-  const gstAmount = round2(subtotal * GST_RATE);
+  const gstAmount = round2(subtotal * (settings.gstRatePercent / 100));
   const codCharges =
     input.paymentOption === "cod" ? round2((subtotal + gstAmount) * COD_SURCHARGE_RATE) : 0;
   const finalAmount = round2(subtotal + gstAmount + codCharges);
@@ -208,11 +208,44 @@ export async function getOrderByNumber(
   };
 }
 
-// Idempotent — safe to call more than once for the same order (e.g. if a
-// buyer reloads the success page) since it only ever moves Pending → Completed.
-export async function markOrderPaid(orderNumber: string): Promise<void> {
+export type StripePaymentDetails = {
+  stripeSessionId: string;
+  stripePaymentIntentId: string | null;
+  receiptUrl: string | null;
+  paidAt: Date;
+  cardBrand: string | null;
+  cardLast4: string | null;
+};
+
+// Idempotent — safe for the webhook to redeliver the same event (Stripe's
+// at-least-once delivery) since it only ever moves Pending → Completed.
+export async function markOrderPaidFromStripe(
+  orderNumber: string,
+  details: StripePaymentDetails,
+): Promise<void> {
   await Order.update(
-    { paymentStatus: "Completed" },
+    {
+      paymentStatus: "Completed",
+      stripeSessionId: details.stripeSessionId,
+      stripePaymentIntentId: details.stripePaymentIntentId,
+      receiptUrl: details.receiptUrl,
+      paidAt: details.paidAt,
+      cardBrand: details.cardBrand,
+      cardLast4: details.cardLast4,
+    },
+    { where: { orderNumber, paymentStatus: "Pending" } },
+  );
+}
+
+// Covers both a delayed payment method failing (checkout.session.async_payment_failed)
+// and an abandoned Checkout Session (checkout.session.expired) — either way the
+// order never got paid, so it's flipped to Failed/cancelled rather than left
+// stuck Pending/new forever (which would otherwise linger as a live order in
+// the customer's active-orders list and the admin dashboard). Guarded the
+// same way as markOrderPaidFromStripe: only ever moves out of Pending once.
+export async function markOrderPaymentFailed(orderNumber: string): Promise<void> {
+  await Order.update(
+    { paymentStatus: "Failed", orderStatus: "cancelled" },
     { where: { orderNumber, paymentStatus: "Pending" } },
   );
 }

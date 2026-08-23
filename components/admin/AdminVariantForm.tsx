@@ -15,7 +15,7 @@ import {
 
 const inputClass =
   "w-full rounded-lg border border-neutral-300 bg-white px-3.5 py-2 text-[0.86rem] outline-none focus:border-red-500";
-const labelClass = "mb-1.5 block text-[0.72rem] font-bold text-neutral-500";
+const labelClass = "mb-1.5 block text-[0.8rem] font-bold text-neutral-500";
 
 export function AdminVariantForm({
   variantId,
@@ -53,7 +53,7 @@ export function AdminVariantForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
       <div className="rounded-xl border border-neutral-200 bg-white p-5">
-        <h2 className="mb-4 text-[0.82rem] font-extrabold text-neutral-900">Variant Attributes</h2>
+        <h2 className="mb-4 text-[0.9rem] font-extrabold text-neutral-900">Variant Attributes</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className={labelClass}>SKU</label>
@@ -79,13 +79,13 @@ export function AdminVariantForm({
       </div>
 
       <div className="rounded-xl border border-neutral-200 bg-white p-5">
-        <h2 className="mb-4 text-[0.82rem] font-extrabold text-neutral-900">Stock &amp; Price</h2>
+        <h2 className="mb-4 text-[0.9rem] font-extrabold text-neutral-900">Stock &amp; Price</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className={labelClass}>Base Price ($)</label>
             <input type="number" step="0.01" min="0" {...register("basePrice")} className={inputClass} />
             {errors.basePrice && (
-              <p className="mt-1 text-[0.72rem] font-semibold text-red-600">
+              <p className="mt-1 text-[0.8rem] font-semibold text-red-600">
                 {errors.basePrice.message}
               </p>
             )}

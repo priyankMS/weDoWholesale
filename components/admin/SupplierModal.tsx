@@ -11,7 +11,7 @@ import { adminSupplierSchema, type AdminSupplierInput } from "@/lib/validation/a
 
 const inputClass =
   "w-full rounded-lg border border-neutral-300 bg-white px-3.5 py-2 text-[0.86rem] outline-none focus:border-red-500";
-const labelClass = "mb-1.5 block text-[0.72rem] font-bold text-neutral-500";
+const labelClass = "mb-1.5 block text-[0.8rem] font-bold text-neutral-500";
 
 type SupplierData = AdminSupplierInput & { id?: number };
 
@@ -76,7 +76,7 @@ export function SupplierModal({
                 <label className={labelClass}>Supplier Name</label>
                 <input {...register("name")} className={inputClass} />
                 {errors.name && (
-                  <p className="mt-1 text-[0.72rem] font-semibold text-red-600">{errors.name.message}</p>
+                  <p className="mt-1 text-[0.8rem] font-semibold text-red-600">{errors.name.message}</p>
                 )}
               </div>
               <div>
@@ -103,7 +103,7 @@ export function SupplierModal({
                   <input {...register("halalCertStatus")} className={inputClass} />
                 </div>
               </div>
-              <label className="flex items-center gap-1.5 text-[0.82rem] text-neutral-600">
+              <label className="flex items-center gap-1.5 text-[0.9rem] text-neutral-600">
                 <input type="checkbox" {...register("isActive")} className="h-3.5 w-3.5" />
                 Active
               </label>
@@ -112,14 +112,14 @@ export function SupplierModal({
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-[0.82rem] font-bold text-neutral-700 hover:bg-neutral-50"
+                  className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-[0.9rem] font-bold text-neutral-700 hover:bg-neutral-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-red-600 px-4 py-2 text-[0.82rem] font-bold text-white hover:bg-red-700 disabled:opacity-60"
+                  className="rounded-lg bg-red-600 px-4 py-2 text-[0.9rem] font-bold text-white hover:bg-red-700 disabled:opacity-60"
                 >
                   {saving ? "Saving…" : "Save"}
                 </button>

@@ -8,6 +8,7 @@ import {
 import { sequelize } from "@/lib/db/sequelize";
 import { User } from "@/lib/db/models/User";
 import { WdhProduct } from "@/lib/db/models/WdhProduct";
+import { safeAssociate } from "@/lib/db/associate";
 
 // Per-user wishlist ("Saved") for Phase 2 — Discovery and Browsing. Didn't
 // exist before this phase; the wdh_* product schema has no per-user state.
@@ -41,7 +42,9 @@ SavedProduct.init(
   },
 );
 
-User.hasMany(SavedProduct, { foreignKey: "userId" });
-SavedProduct.belongsTo(User, { foreignKey: "userId" });
-WdhProduct.hasMany(SavedProduct, { foreignKey: "productId" });
-SavedProduct.belongsTo(WdhProduct, { foreignKey: "productId" });
+safeAssociate(() => {
+  User.hasMany(SavedProduct, { foreignKey: "userId" });
+  SavedProduct.belongsTo(User, { foreignKey: "userId" });
+  WdhProduct.hasMany(SavedProduct, { foreignKey: "productId" });
+  SavedProduct.belongsTo(WdhProduct, { foreignKey: "productId" });
+});

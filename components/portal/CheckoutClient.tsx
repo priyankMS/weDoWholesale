@@ -62,7 +62,6 @@ const PAYMENT_META: Record<
   },
 };
 
-const GST_RATE = 0.05;
 const COD_RATE = 0.02;
 
 const TERMS_LABEL: Record<"net15" | "net30", string> = {
@@ -85,6 +84,7 @@ const STEPS: { key: Step; label: string }[] = [
 
 export function CheckoutClient({
   account,
+  gstRatePercent,
 }: {
   account: {
     businessName: string | null;
@@ -93,6 +93,7 @@ export function CheckoutClient({
     phone: string | null;
     paymentTerms: "cod" | "net15" | "net30" | null;
   };
+  gstRatePercent: number;
 }) {
   const router = useRouter();
   const { items, ready, subtotal, clear } = useCart();
@@ -119,7 +120,7 @@ export function CheckoutClient({
     if (ready && items.length === 0 && !receipt) router.replace("/cart");
   }, [ready, items.length, receipt, router]);
 
-  const gst = subtotal * GST_RATE;
+  const gst = subtotal * (gstRatePercent / 100);
   const codCharges = paymentOption === "cod" ? (subtotal + gst) * COD_RATE : 0;
   const total = subtotal + gst + codCharges;
 
@@ -457,7 +458,7 @@ export function CheckoutClient({
           <div className="mb-5 rounded-2xl border-[1.5px] border-neutral-200 bg-white p-4">
             {[
               ["Subtotal", subtotal],
-              ["GST (5%)", gst],
+              [`GST (${gstRatePercent}%)`, gst],
               ...(codCharges > 0 ? [["COD surcharge (2%)", codCharges] as const] : []),
             ].map(([label, val]) => (
               <div key={label} className="flex items-center justify-between py-1 text-[0.84rem]">
@@ -532,7 +533,7 @@ export function CheckoutClient({
           <div className="mb-4 rounded-2xl border-[1.5px] border-neutral-200 bg-white p-4">
             {[
               ["Subtotal", subtotal],
-              ["GST (5%)", gst],
+              [`GST (${gstRatePercent}%)`, gst],
               ...(codCharges > 0 ? [["COD surcharge (2%)", codCharges] as const] : []),
             ].map(([label, val]) => (
               <div key={label} className="flex items-center justify-between py-1 text-[0.84rem]">

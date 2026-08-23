@@ -7,6 +7,7 @@ import {
 } from "sequelize";
 import { sequelize } from "@/lib/db/sequelize";
 import { Product } from "@/lib/db/models/Product";
+import { safeAssociate } from "@/lib/db/associate";
 
 export class ProductAttribute extends Model<
   InferAttributes<ProductAttribute>,
@@ -33,5 +34,7 @@ ProductAttribute.init(
   },
 );
 
-Product.hasMany(ProductAttribute, { foreignKey: "productId" });
-ProductAttribute.belongsTo(Product, { foreignKey: "productId" });
+safeAssociate(() => {
+  Product.hasMany(ProductAttribute, { foreignKey: "productId" });
+  ProductAttribute.belongsTo(Product, { foreignKey: "productId" });
+});

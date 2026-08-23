@@ -38,7 +38,7 @@ export default async function AdminPricingPage({
     <div className="p-6">
       <div className="mb-5">
         <h1 className="font-serif text-xl font-black text-neutral-900">Price Control</h1>
-        <p className="text-[0.82rem] text-neutral-500">
+        <p className="text-[0.9rem] text-neutral-500">
           {total} pricing rows · rows highlighted red have margin under 10%
         </p>
       </div>
@@ -70,16 +70,16 @@ export default async function AdminPricingPage({
         </select>
         <button
           type="submit"
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-[0.82rem] font-bold text-white hover:bg-neutral-800"
+          className="rounded-lg bg-neutral-900 px-4 py-2 text-[0.9rem] font-bold text-white hover:bg-neutral-800"
         >
           Filter
         </button>
       </form>
 
       <AdminTableCard>
-        <table className="w-full text-left text-[0.82rem]">
+        <table className="w-full text-left text-[0.9rem]">
           <thead>
-            <tr className="border-b border-neutral-100 text-[0.7rem] font-bold tracking-wide text-neutral-400 uppercase">
+            <tr className="border-b border-neutral-100 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
               <th className="px-4 py-2.5">SKU</th>
               <th className="px-4 py-2.5">Product</th>
               <th className="px-4 py-2.5">Variant</th>
@@ -133,9 +133,9 @@ export default async function AdminPricingPage({
             show a price to customers until one is added.
           </p>
           <AdminTableCard>
-            <table className="w-full text-left text-[0.82rem]">
+            <table className="w-full text-left text-[0.9rem]">
               <thead>
-                <tr className="border-b border-neutral-100 text-[0.7rem] font-bold tracking-wide text-neutral-400 uppercase">
+                <tr className="border-b border-neutral-100 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
                   <th className="px-4 py-2.5">SKU</th>
                   <th className="px-4 py-2.5">Product</th>
                   <th className="px-4 py-2.5">Variant</th>

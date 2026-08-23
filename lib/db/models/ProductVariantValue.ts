@@ -8,6 +8,7 @@ import {
 import { sequelize } from "@/lib/db/sequelize";
 import { ProductVariant } from "@/lib/db/models/ProductVariant";
 import { VariantValue } from "@/lib/db/models/VariantValue";
+import { safeAssociate } from "@/lib/db/associate";
 
 // Join table: links a ProductVariant to its VariantValues (e.g. "this
 // variant is Large + Bone-In").
@@ -34,7 +35,9 @@ ProductVariantValue.init(
   },
 );
 
-ProductVariant.hasMany(ProductVariantValue, { foreignKey: "productVariantId" });
-ProductVariantValue.belongsTo(ProductVariant, { foreignKey: "productVariantId" });
-VariantValue.hasMany(ProductVariantValue, { foreignKey: "variantValueId" });
-ProductVariantValue.belongsTo(VariantValue, { foreignKey: "variantValueId" });
+safeAssociate(() => {
+  ProductVariant.hasMany(ProductVariantValue, { foreignKey: "productVariantId" });
+  ProductVariantValue.belongsTo(ProductVariant, { foreignKey: "productVariantId" });
+  VariantValue.hasMany(ProductVariantValue, { foreignKey: "variantValueId" });
+  ProductVariantValue.belongsTo(VariantValue, { foreignKey: "variantValueId" });
+});

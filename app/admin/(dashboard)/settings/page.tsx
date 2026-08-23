@@ -9,7 +9,7 @@ export default async function AdminSettingsPage() {
     <div className="p-6">
       <div className="mb-5">
         <h1 className="font-serif text-xl font-black text-neutral-900">Settings</h1>
-        <p className="text-[0.82rem] text-neutral-500">Platform-wide pricing and delivery defaults</p>
+        <p className="text-[0.9rem] text-neutral-500">Platform-wide pricing and delivery defaults</p>
       </div>
 
       <SettingsForm

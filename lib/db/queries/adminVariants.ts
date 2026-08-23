@@ -103,13 +103,52 @@ export async function listAdminVariants(
   return { variants, total: count, page, pageSize };
 }
 
-export async function getVariantFacets(): Promise<{ conditions: string[]; bones: string[] }> {
-  const [conditions, bones] = await Promise.all([
+export async function listVariantsForProduct(productId: number): Promise<AdminVariantRow[]> {
+  const rows = await WdhVariant.findAll({
+    where: { productId },
+    include,
+    order: [["id", "ASC"]],
+  });
+
+  return rows.map((v) => {
+    const product = (v as WdhVariant & { WdhProduct?: WdhProduct }).WdhProduct;
+    const supplierNames = new Set<string>();
+    for (const p of v.pricing ?? []) {
+      const pricingWithSupplier = p as WdhVariantPricing & { WdhSupplier?: WdhSupplier };
+      if (pricingWithSupplier.WdhSupplier) supplierNames.add(pricingWithSupplier.WdhSupplier.name);
+    }
+    return {
+      id: v.id,
+      sku: v.sku,
+      productId: product?.id ?? productId,
+      productName: product?.item ?? "—",
+      category: product?.category ?? "",
+      conditionType: v.conditionType || null,
+      cutType: v.cutType || null,
+      boneType: v.boneType || null,
+      skinType: v.skinType || null,
+      label: variantLabel(v),
+      stockCount: v.stockCount ?? 0,
+      stockState: stockStateFor(v.stockCount ?? null),
+      basePrice: v.basePrice != null ? Number(v.basePrice) : null,
+      supplierNames: Array.from(supplierNames),
+    };
+  });
+}
+
+export async function getVariantFacets(): Promise<{
+  conditions: string[];
+  bones: string[];
+  skins: string[];
+}> {
+  const [conditions, bones, skins] = await Promise.all([
     WdhVariant.findAll({ attributes: ["conditionType"], group: ["conditionType"] }),
     WdhVariant.findAll({ attributes: ["boneType"], group: ["boneType"] }),
+    WdhVariant.findAll({ attributes: ["skinType"], group: ["skinType"] }),
   ]);
   return {
     conditions: conditions.map((c) => c.conditionType || "").filter(Boolean).sort(),
     bones: bones.map((b) => b.boneType || "").filter(Boolean).sort(),
+    skins: skins.map((s) => s.skinType || "").filter(Boolean).sort(),
   };
 }

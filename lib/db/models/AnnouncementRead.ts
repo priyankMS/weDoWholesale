@@ -8,6 +8,7 @@ import {
 import { sequelize } from "@/lib/db/sequelize";
 import { User } from "@/lib/db/models/User";
 import { Announcement } from "@/lib/db/models/Announcement";
+import { safeAssociate } from "@/lib/db/associate";
 
 // Per-user read receipt for an Announcement — absence of a row means
 // unread. Written in bulk by "Mark all read" (Screen 31).
@@ -41,7 +42,9 @@ AnnouncementRead.init(
   },
 );
 
-User.hasMany(AnnouncementRead, { foreignKey: "userId" });
-AnnouncementRead.belongsTo(User, { foreignKey: "userId" });
-Announcement.hasMany(AnnouncementRead, { foreignKey: "announcementId" });
-AnnouncementRead.belongsTo(Announcement, { foreignKey: "announcementId" });
+safeAssociate(() => {
+  User.hasMany(AnnouncementRead, { foreignKey: "userId" });
+  AnnouncementRead.belongsTo(User, { foreignKey: "userId" });
+  Announcement.hasMany(AnnouncementRead, { foreignKey: "announcementId" });
+  AnnouncementRead.belongsTo(Announcement, { foreignKey: "announcementId" });
+});

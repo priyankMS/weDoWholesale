@@ -1,7 +1,8 @@
 import { Op } from "sequelize";
 import { WdhProduct } from "@/lib/db/models/WdhProduct";
+import { computeSeoStatus, type SeoStatus } from "@/lib/seo";
 
-export type SeoStatus = "complete" | "missing" | "warning";
+export type { SeoStatus };
 
 export type AdminSeoRow = {
   id: number;
@@ -32,31 +33,7 @@ export type AdminSeoListResult = {
   pageSize: number;
 };
 
-// Same thresholds the mockup's SEO Manager column showed ("Title Len",
-// "Desc Len") — a title under 30 chars or a description under 70 chars
-// reads as too short for a search snippet, so those count as "warning"
-// rather than "complete" even when the field is non-empty.
-const MIN_TITLE_LEN = 30;
-const MIN_DESC_LEN = 70;
-
-function computeStatus(row: {
-  metaTitle: string | null;
-  metaDesc: string | null;
-  hasAltTag: boolean;
-}): { status: SeoStatus; score: number } {
-  const titleLen = row.metaTitle?.trim().length ?? 0;
-  const descLen = row.metaDesc?.trim().length ?? 0;
-
-  if (titleLen === 0 || descLen === 0) return { status: "missing", score: 0 };
-
-  let score = 40; // both fields present
-  if (titleLen >= MIN_TITLE_LEN) score += 25;
-  if (descLen >= MIN_DESC_LEN) score += 25;
-  if (row.hasAltTag) score += 10;
-
-  const warning = titleLen < MIN_TITLE_LEN || descLen < MIN_DESC_LEN || !row.hasAltTag;
-  return { status: warning ? "warning" : "complete", score };
-}
+const computeStatus = computeSeoStatus;
 
 export async function listAdminSeoRows(params: AdminSeoListParams): Promise<AdminSeoListResult> {
   const { category, filter, page = 1, pageSize = 25 } = params;

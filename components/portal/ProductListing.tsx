@@ -19,7 +19,13 @@ type View = "grid" | "list";
 type CategorySummary = { category: string; slug: string; icon: string; count: number };
 
 const PAGE_SIZE = 10;
-const EMPTY_FACETS = { types: [] as string[], condition: [] as string[], bone: [] as string[], skin: [] as string[] };
+const EMPTY_FACETS = {
+  types: [] as string[],
+  typeCounts: {} as Record<string, number>,
+  condition: [] as string[],
+  bone: [] as string[],
+  skin: [] as string[],
+};
 
 export function ProductListing({
   category,
@@ -39,6 +45,7 @@ export function ProductListing({
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const filtersKey = JSON.stringify(filters);
+  const chipDragStart = useRef<{ x: number; y: number } | null>(null);
 
   const getKey = (pageIndex: number, previous: ProductPageResult | null): ProductPageParams | null => {
     if (previous && !previous.hasMore) return null;
@@ -132,20 +139,30 @@ export function ProductListing({
 
         {facets.types.length > 1 && (
           <div className="scrollbar-none mb-2 flex gap-1.75 overflow-x-auto px-4 pb-0.5 lg:px-0">
-            {["All", ...facets.types].map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPart(p)}
-                className={`shrink-0 rounded-full border-[1.5px] px-3.5 py-1.75 text-[0.78rem] font-semibold whitespace-nowrap ${
-                  p === part
-                    ? "border-primary-500 bg-primary-500 text-white"
-                    : "border-neutral-200 bg-white text-neutral-700"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
+            {["All", ...facets.types].map((p) => {
+              const count = p === "All" ? total : (facets.typeCounts[p] ?? 0);
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onPointerDown={(e) => {
+                    chipDragStart.current = { x: e.clientX, y: e.clientY };
+                  }}
+                  onClick={(e) => {
+                    const start = chipDragStart.current;
+                    if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 8) return;
+                    setPart(p);
+                  }}
+                  className={`shrink-0 rounded-full border-[1.5px] px-3.5 py-1.75 text-[0.78rem] font-semibold whitespace-nowrap ${
+                    p === part
+                      ? "border-primary-500 bg-primary-500 text-white"
+                      : "border-neutral-200 bg-white text-neutral-700"
+                  }`}
+                >
+                  {p} <span className={p === part ? "text-white/80" : "text-neutral-400"}>{count}</span>
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -248,19 +265,22 @@ export function ProductListing({
                   layout={view}
                 />
               ))}
+              {isFetchingMore &&
+                Array.from({ length: 3 }).map((_, i) => (
+                  <ProductCardSkeleton key={`more-${i}`} layout={view} />
+                ))}
             </div>
 
             <div ref={sentinelRef} className="h-1" />
 
-            {hasMore && (
+            {hasMore && !isFetchingMore && (
               <div className="flex justify-center px-4 pt-4 lg:px-0">
                 <button
                   type="button"
-                  disabled={isFetchingMore}
                   onClick={() => setSize((s) => s + 1)}
-                  className="rounded-full border-[1.5px] border-neutral-200 bg-white px-5 py-2 text-[0.82rem] font-bold text-neutral-700 disabled:opacity-50"
+                  className="rounded-full border-[1.5px] border-neutral-200 bg-white px-5 py-2 text-[0.82rem] font-bold text-neutral-700"
                 >
-                  {isFetchingMore ? "Loading…" : "Load more"}
+                  Load more
                 </button>
               </div>
             )}

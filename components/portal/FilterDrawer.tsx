@@ -89,7 +89,7 @@ export function FilterDrawer({
       />
       <div
         className={`fixed inset-x-0 bottom-0 z-101 max-h-[88vh] overflow-y-auto rounded-t-[20px] bg-white transition-transform duration-300 lg:inset-x-auto lg:top-1/2 lg:right-auto lg:left-1/2 lg:max-h-[80vh] lg:w-110 lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-2xl ${
-          open ? "translate-y-0" : "translate-y-full lg:scale-95 lg:opacity-0"
+          open ? "translate-y-0" : "pointer-events-none translate-y-full lg:scale-95 lg:opacity-0"
         }`}
       >
         <div className="mx-auto mt-3 mb-1 h-1 w-9.5 rounded-full bg-neutral-200 lg:hidden" />

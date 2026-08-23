@@ -23,11 +23,11 @@ export default async function AdminSuppliersPage() {
       <div className="mb-5 flex items-center justify-between">
         <div>
           <h1 className="font-serif text-xl font-black text-neutral-900">Suppliers</h1>
-          <p className="text-[0.82rem] text-neutral-500">{suppliers.length} registered suppliers</p>
+          <p className="text-[0.9rem] text-neutral-500">{suppliers.length} registered suppliers</p>
         </div>
         <SupplierModal
           trigger={
-            <button className="cursor-pointer rounded-lg bg-red-600 px-4 py-2 text-[0.82rem] font-bold text-white hover:bg-red-700">
+            <button className="cursor-pointer rounded-lg bg-red-600 px-4 py-2 text-[0.9rem] font-bold text-white hover:bg-red-700">
               + Add Supplier
             </button>
           }
@@ -35,9 +35,9 @@ export default async function AdminSuppliersPage() {
       </div>
 
       <AdminTableCard>
-        <table className="w-full text-left text-[0.82rem]">
+        <table className="w-full text-left text-[0.9rem]">
           <thead>
-            <tr className="border-b border-neutral-100 text-[0.7rem] font-bold tracking-wide text-neutral-400 uppercase">
+            <tr className="border-b border-neutral-100 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
               <th className="px-4 py-2.5">Supplier Name</th>
               <th className="px-4 py-2.5">Contact</th>
               <th className="px-4 py-2.5">Phone</th>
@@ -61,7 +61,7 @@ export default async function AdminSuppliersPage() {
                 </td>
                 <td className="px-4 py-2.5">
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[0.7rem] font-bold ${
+                    className={`rounded-full px-2 py-0.5 text-[0.78rem] font-bold ${
                       s.isActive ? "bg-green-100 text-green-700" : "bg-neutral-100 text-neutral-500"
                     }`}
                   >

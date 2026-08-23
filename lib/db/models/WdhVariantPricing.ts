@@ -46,7 +46,13 @@ WdhVariantPricing.init(
   },
 );
 
-WdhVariant.hasMany(WdhVariantPricing, { foreignKey: "variantId", as: "pricing" });
-WdhVariantPricing.belongsTo(WdhVariant, { foreignKey: "variantId" });
-WdhSupplier.hasMany(WdhVariantPricing, { foreignKey: "supplierId" });
-WdhVariantPricing.belongsTo(WdhSupplier, { foreignKey: "supplierId" });
+// Guarded: dev HMR re-executes this module without restarting the
+// process, and the long-lived WdhVariant/WdhSupplier classes would
+// otherwise pick up a second association with the same alias on every
+// reload — same fix as WdhVariant.ts's WdhProduct association.
+if (!WdhVariant.associations.pricing) {
+  WdhVariant.hasMany(WdhVariantPricing, { foreignKey: "variantId", as: "pricing" });
+  WdhVariantPricing.belongsTo(WdhVariant, { foreignKey: "variantId" });
+  WdhSupplier.hasMany(WdhVariantPricing, { foreignKey: "supplierId" });
+  WdhVariantPricing.belongsTo(WdhSupplier, { foreignKey: "supplierId" });
+}

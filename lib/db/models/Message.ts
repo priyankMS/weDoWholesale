@@ -7,6 +7,7 @@ import {
 } from "sequelize";
 import { sequelize } from "@/lib/db/sequelize";
 import { MessageThread } from "@/lib/db/models/MessageThread";
+import { safeAssociate } from "@/lib/db/associate";
 
 export type MessageSenderType = "customer" | "staff" | "system";
 
@@ -49,5 +50,7 @@ Message.init(
   },
 );
 
-MessageThread.hasMany(Message, { foreignKey: "threadId" });
-Message.belongsTo(MessageThread, { foreignKey: "threadId" });
+safeAssociate(() => {
+  MessageThread.hasMany(Message, { foreignKey: "threadId" });
+  Message.belongsTo(MessageThread, { foreignKey: "threadId" });
+});

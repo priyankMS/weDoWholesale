@@ -16,7 +16,7 @@ export default async function AdminProductNewPage() {
           ← Back to Products
         </Link>
         <h1 className="mt-2 font-serif text-xl font-black text-neutral-900">New Product</h1>
-        <p className="text-[0.82rem] text-neutral-500">
+        <p className="text-[0.9rem] text-neutral-500">
           Create a product with its first variant and pricing.
         </p>
       </div>

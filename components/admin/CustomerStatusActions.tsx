@@ -45,7 +45,7 @@ export function CustomerStatusActions({
           type="button"
           onClick={() => setStatus("rejected")}
           disabled={loading !== null}
-          className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-[0.76rem] font-bold text-neutral-600 hover:bg-neutral-50 disabled:opacity-50"
+          className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-[0.84rem] font-bold text-neutral-600 hover:bg-neutral-50 disabled:opacity-50"
         >
           {loading === "rejected" ? "…" : "Reject"}
         </button>
@@ -53,7 +53,7 @@ export function CustomerStatusActions({
           type="button"
           onClick={() => setStatus("approved")}
           disabled={loading !== null}
-          className="rounded-md bg-green-600 px-3 py-1.5 text-[0.76rem] font-bold text-white hover:bg-green-700 disabled:opacity-50"
+          className="rounded-md bg-green-600 px-3 py-1.5 text-[0.84rem] font-bold text-white hover:bg-green-700 disabled:opacity-50"
         >
           {loading === "approved" ? "…" : "✓ Approve"}
         </button>
@@ -68,7 +68,7 @@ export function CustomerStatusActions({
           type="button"
           onClick={() => setStatus("approved")}
           disabled={loading !== null}
-          className="rounded-md bg-green-600 px-3 py-1.5 text-[0.76rem] font-bold text-white hover:bg-green-700 disabled:opacity-50"
+          className="rounded-md bg-green-600 px-3 py-1.5 text-[0.84rem] font-bold text-white hover:bg-green-700 disabled:opacity-50"
         >
           {loading === "approved" ? "…" : "✓ Approve instead"}
         </button>
@@ -83,7 +83,7 @@ export function CustomerStatusActions({
         type="button"
         onClick={() => setStatus("rejected")}
         disabled={loading !== null}
-        className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-[0.76rem] font-bold text-neutral-600 hover:bg-neutral-50 disabled:opacity-50"
+        className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-[0.84rem] font-bold text-neutral-600 hover:bg-neutral-50 disabled:opacity-50"
       >
         {loading === "rejected" ? "…" : "Revoke"}
       </button>

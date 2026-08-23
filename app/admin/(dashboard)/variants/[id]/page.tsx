@@ -27,7 +27,7 @@ export default async function AdminVariantEditPage({
         <h1 className="mt-2 font-serif text-xl font-black text-neutral-900">
           {product?.item ?? "Variant"} — {variantLabel(variant)}
         </h1>
-        <p className="text-[0.82rem] text-neutral-500">SKU: {variant.sku || "—"}</p>
+        <p className="text-[0.9rem] text-neutral-500">SKU: {variant.sku || "—"}</p>
       </div>
 
       <AdminVariantForm

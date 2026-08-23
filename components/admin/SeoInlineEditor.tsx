@@ -53,10 +53,10 @@ export function SeoInlineEditor({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-lg rounded-xl bg-white p-5 shadow-xl">
         <h3 className="mb-1 text-[0.9rem] font-extrabold text-neutral-900">{productName}</h3>
-        <p className="mb-4 text-[0.76rem] text-neutral-500">Edit SEO metadata</p>
+        <p className="mb-4 text-[0.84rem] text-neutral-500">Edit SEO metadata</p>
 
         <div className="mb-3.5">
-          <label className="mb-1.5 block text-[0.72rem] font-bold text-neutral-500">
+          <label className="mb-1.5 block text-[0.8rem] font-bold text-neutral-500">
             Meta Title ({metaTitle.length} chars)
           </label>
           <input
@@ -67,7 +67,7 @@ export function SeoInlineEditor({
         </div>
 
         <div className="mb-5">
-          <label className="mb-1.5 block text-[0.72rem] font-bold text-neutral-500">
+          <label className="mb-1.5 block text-[0.8rem] font-bold text-neutral-500">
             Meta Description ({metaDesc.length} chars)
           </label>
           <textarea
@@ -82,7 +82,7 @@ export function SeoInlineEditor({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-[0.82rem] font-bold text-neutral-700 hover:bg-neutral-50"
+            className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-[0.9rem] font-bold text-neutral-700 hover:bg-neutral-50"
           >
             Cancel
           </button>
@@ -90,7 +90,7 @@ export function SeoInlineEditor({
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="rounded-lg bg-red-600 px-4 py-2 text-[0.82rem] font-bold text-white hover:bg-red-700 disabled:opacity-60"
+            className="rounded-lg bg-red-600 px-4 py-2 text-[0.9rem] font-bold text-white hover:bg-red-700 disabled:opacity-60"
           >
             {saving ? "Saving…" : "Save"}
           </button>

@@ -32,10 +32,10 @@ export function AccountHeader({
         <div className="mt-1.5 font-serif text-[1.2rem] font-bold text-neutral-900">{title}</div>
       </div>
 
-      <div className="mb-5 hidden items-start justify-between px-4 pt-6 lg:flex lg:px-0">
+      <div className="mb-6 hidden items-start justify-between border-b-[1.5px] border-neutral-200 px-4 pt-8 pb-5 lg:flex lg:px-0">
         <div>
-          <div className="font-serif text-[1.6rem] font-black text-neutral-900">{title}</div>
-          {subtitle && <div className="mt-1 text-[0.82rem] text-neutral-400">{subtitle}</div>}
+          <div className="font-serif text-[1.75rem] font-black text-neutral-900">{title}</div>
+          {subtitle && <div className="mt-1.5 text-[0.86rem] text-neutral-400">{subtitle}</div>}
         </div>
         {desktopAction}
       </div>

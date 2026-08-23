@@ -2,22 +2,9 @@ import Link from "next/link";
 import { listAdminVariants, getVariantFacets } from "@/lib/db/queries/adminVariants";
 import { getAdminProductCategories } from "@/lib/db/queries/adminProducts";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
+import { StockBadge } from "@/components/admin/StockBadge";
 
 const PAGE_SIZE = 25;
-
-function StockBadge({ state }: { state: "in" | "low" | "out" }) {
-  const styles = {
-    in: "bg-green-100 text-green-700",
-    low: "bg-amber-100 text-amber-700",
-    out: "bg-red-100 text-red-700",
-  } as const;
-  const labels = { in: "In stock", low: "Low stock", out: "Out of stock" } as const;
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-[0.7rem] font-bold ${styles[state]}`}>
-      {labels[state]}
-    </span>
-  );
-}
 
 export default async function AdminVariantsPage({
   searchParams,
@@ -56,7 +43,7 @@ export default async function AdminVariantsPage({
     <div className="p-6">
       <div className="mb-5">
         <h1 className="font-serif text-xl font-black text-neutral-900">Variants &amp; SKUs</h1>
-        <p className="text-[0.82rem] text-neutral-500">{total} variants across all products</p>
+        <p className="text-[0.9rem] text-neutral-500">{total} variants across all products</p>
       </div>
 
       <form className="mb-4 flex flex-wrap items-center gap-2.5" method="get">
@@ -105,16 +92,16 @@ export default async function AdminVariantsPage({
         </select>
         <button
           type="submit"
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-[0.82rem] font-bold text-white hover:bg-neutral-800"
+          className="rounded-lg bg-neutral-900 px-4 py-2 text-[0.9rem] font-bold text-white hover:bg-neutral-800"
         >
           Filter
         </button>
       </form>
 
       <AdminTableCard>
-        <table className="w-full text-left text-[0.82rem]">
+        <table className="w-full text-left text-[0.9rem]">
           <thead>
-            <tr className="border-b border-neutral-100 text-[0.7rem] font-bold tracking-wide text-neutral-400 uppercase">
+            <tr className="border-b border-neutral-100 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
               <th className="px-4 py-2.5">SKU</th>
               <th className="px-4 py-2.5">Parent Product</th>
               <th className="px-4 py-2.5">Category</th>
@@ -128,7 +115,7 @@ export default async function AdminVariantsPage({
           <tbody>
             {variants.map((v) => (
               <tr key={v.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
-                <td className="px-4 py-2.5 font-mono text-[0.76rem] text-neutral-500">{v.sku || "—"}</td>
+                <td className="px-4 py-2.5 font-mono text-[0.84rem] text-neutral-500">{v.sku || "—"}</td>
                 <td className="px-4 py-2.5 font-semibold text-neutral-900">
                   <Link href={`/admin/products/${v.productId}`} className="hover:text-red-600">
                     {v.productName}

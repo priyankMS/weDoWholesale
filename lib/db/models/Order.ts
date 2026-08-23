@@ -7,6 +7,7 @@ import {
 } from "sequelize";
 import { sequelize } from "@/lib/db/sequelize";
 import { User } from "@/lib/db/models/User";
+import { safeAssociate } from "@/lib/db/associate";
 
 export type PaymentMethod = "COD" | "Online";
 export type PaymentStatus = "Pending" | "Failed" | "Completed";
@@ -46,6 +47,12 @@ export class Order extends Model<
   declare paidAmount: number | null;
   declare isReorder: CreationOptional<boolean>;
   declare sourceOrderNumber: string | null;
+  declare stripeSessionId: CreationOptional<string | null>;
+  declare stripePaymentIntentId: CreationOptional<string | null>;
+  declare receiptUrl: CreationOptional<string | null>;
+  declare paidAt: CreationOptional<Date | null>;
+  declare cardBrand: CreationOptional<string | null>;
+  declare cardLast4: CreationOptional<string | null>;
 }
 
 Order.init(
@@ -88,6 +95,16 @@ Order.init(
     paidAmount: { type: DataTypes.DECIMAL(10, 2), allowNull: true, field: "paid_amount" },
     isReorder: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: "is_reorder" },
     sourceOrderNumber: { type: DataTypes.STRING(100), allowNull: true, field: "source_order_number" },
+    stripeSessionId: { type: DataTypes.STRING(255), allowNull: true, field: "stripe_session_id" },
+    stripePaymentIntentId: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "stripe_payment_intent_id",
+    },
+    receiptUrl: { type: DataTypes.STRING(500), allowNull: true, field: "receipt_url" },
+    paidAt: { type: DataTypes.DATE, allowNull: true, field: "paid_at" },
+    cardBrand: { type: DataTypes.STRING(30), allowNull: true, field: "card_brand" },
+    cardLast4: { type: DataTypes.STRING(4), allowNull: true, field: "card_last4" },
   },
   {
     sequelize,
@@ -100,5 +117,7 @@ Order.init(
 // (getAdminOrderDetail / listAdminOrders in lib/db/queries/adminOrders.ts)
 // — the wholesale checkout flow itself only ever looks up Order by userId
 // directly, so this association wasn't needed until now.
-User.hasMany(Order, { foreignKey: "userId" });
-Order.belongsTo(User, { foreignKey: "userId" });
+safeAssociate(() => {
+  User.hasMany(Order, { foreignKey: "userId" });
+  Order.belongsTo(User, { foreignKey: "userId" });
+});

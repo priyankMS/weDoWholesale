@@ -15,7 +15,7 @@ import {
 
 const inputClass =
   "w-full rounded-lg border border-neutral-300 bg-white px-3.5 py-2 text-[0.86rem] outline-none focus:border-red-500";
-const labelClass = "mb-1.5 block text-[0.72rem] font-bold text-neutral-500";
+const labelClass = "mb-1.5 block text-[0.8rem] font-bold text-neutral-500";
 
 export function AdminProductForm({
   productId,
@@ -53,7 +53,7 @@ export function AdminProductForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
       <div className="rounded-xl border border-neutral-200 bg-white p-5">
-        <h2 className="mb-4 text-[0.82rem] font-extrabold text-neutral-900">Product Info</h2>
+        <h2 className="mb-4 text-[0.9rem] font-extrabold text-neutral-900">Product Info</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className={labelClass}>Product Name</label>
@@ -76,7 +76,7 @@ export function AdminProductForm({
       </div>
 
       <div className="rounded-xl border border-neutral-200 bg-white p-5">
-        <h2 className="mb-4 text-[0.82rem] font-extrabold text-neutral-900">Descriptions</h2>
+        <h2 className="mb-4 text-[0.9rem] font-extrabold text-neutral-900">Descriptions</h2>
         <div className="space-y-4">
           <div>
             <label className={labelClass}>Short Description</label>
@@ -90,7 +90,7 @@ export function AdminProductForm({
       </div>
 
       <div className="rounded-xl border border-neutral-200 bg-white p-5">
-        <h2 className="mb-4 text-[0.82rem] font-extrabold text-neutral-900">SEO</h2>
+        <h2 className="mb-4 text-[0.9rem] font-extrabold text-neutral-900">SEO</h2>
         <div className="space-y-4">
           <div>
             <label className={labelClass}>Meta Title</label>

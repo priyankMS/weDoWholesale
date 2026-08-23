@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { User } from "@/lib/db/models/User";
+import { getPlatformSettings } from "@/lib/db/queries/settings";
 import { CheckoutClient } from "@/components/portal/CheckoutClient";
 
 export default async function CheckoutPage() {
@@ -13,6 +14,8 @@ export default async function CheckoutPage() {
   // gate on the actual order-creation call.
   if (user.status !== "approved") redirect("/pending");
 
+  const settings = await getPlatformSettings();
+
   return (
     <CheckoutClient
       account={{
@@ -22,6 +25,7 @@ export default async function CheckoutPage() {
         phone: user.phone,
         paymentTerms: user.paymentTerms,
       }}
+      gstRatePercent={settings.gstRatePercent}
     />
   );
 }

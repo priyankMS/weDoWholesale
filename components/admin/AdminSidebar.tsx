@@ -98,40 +98,42 @@ export function AdminSidebar({
       .toUpperCase() || "A";
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-neutral-800 bg-neutral-950">
-      <div className="flex items-center gap-2.5 border-b border-neutral-800 px-5 py-5">
-        <span className="text-2xl">🥩</span>
-        <div>
-          <div className="font-serif text-sm font-black text-white">WeDoHalal.</div>
-          <div className="text-[0.65rem] font-bold tracking-wider text-neutral-500 uppercase">
-            Master Admin v1.0
+    <aside className="flex h-screen w-[200px] shrink-0 flex-col overflow-hidden bg-[#0f0e0d]">
+      <div className="flex items-center gap-2 border-b border-[#2a2724] px-4 py-3.5">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#e05a4a] text-[0.9rem]">
+          🥩
+        </span>
+        <div className="min-w-0 leading-tight">
+          <div className="font-[family-name:var(--font-plex-mono)] text-[14px] font-semibold tracking-tight text-white">
+            WeDoHalal<span className="text-[#e05a4a]">.</span>
           </div>
+          <div className="text-[13px] font-medium text-[#5a5450]">Master Admin v1.0</div>
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 overflow-y-auto py-2.5">
         {SECTIONS.map((section) => (
-          <div key={section.heading} className="mb-5">
-            <div className="mb-1.5 px-2.5 text-[0.65rem] font-extrabold tracking-widest text-neutral-600 uppercase">
+          <div key={section.heading} className="pt-2 pb-1">
+            <div className="px-3.5 pb-1 text-[13px] font-semibold tracking-[1.5px] text-[#3a3632] uppercase">
               {section.heading}
             </div>
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col">
               {section.items.map((item) => {
                 const active = isActive(pathname, item.href);
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.84rem] font-semibold transition-colors ${
+                    className={`flex items-center gap-2 border-l-2 px-3.5 py-1.5 text-[14px] font-medium transition-colors ${
                       active
-                        ? "bg-red-600/15 text-red-500"
-                        : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
+                        ? "border-[#e05a4a] bg-[#1e1c1a] text-white"
+                        : "border-transparent text-[#7a7470] hover:bg-[#1e1c1a] hover:text-[#ccc]"
                     }`}
                   >
-                    <span className="text-[0.95rem]">{item.icon}</span>
+                    <span className="w-4 shrink-0 text-center text-[16px]">{item.icon}</span>
                     <span className="flex-1">{item.label}</span>
                     {item.badge && (
-                      <span className="rounded-full bg-neutral-800 px-1.5 py-0.5 text-[0.65rem] font-bold text-neutral-400">
+                      <span className="ml-auto rounded-full bg-[#e05a4a] px-[6px] py-px text-[13px] font-bold text-white">
                         {item.badge}
                       </span>
                     )}
@@ -143,20 +145,20 @@ export function AdminSidebar({
         ))}
       </nav>
 
-      <div className="border-t border-neutral-800 p-3">
-        <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
+      <div className="mt-auto border-t border-[#2a2724] px-3.5 py-2.5">
+        <div className="flex items-center gap-2">
+          <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-[#e05a4a] text-[14px] font-bold text-white">
             {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[0.8rem] font-bold text-white">{name}</div>
-            <div className="truncate text-[0.68rem] text-neutral-500">{email}</div>
+            <div className="truncate text-[14px] font-medium text-[#9a9490]">{name}</div>
+            <div className="truncate text-[13px] text-[#5a5450]">{email}</div>
           </div>
           <button
             type="button"
             onClick={handleLogout}
             aria-label="Sign out"
-            className="cursor-pointer rounded-md p-1.5 text-neutral-500 hover:bg-neutral-900 hover:text-neutral-200"
+            className="shrink-0 cursor-pointer rounded p-1 text-[#5a5450] hover:bg-[#1e1c1a] hover:text-[#ccc]"
           >
             ⏻
           </button>

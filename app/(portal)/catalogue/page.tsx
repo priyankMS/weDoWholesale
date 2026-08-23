@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/auth/session";
 import { User } from "@/lib/db/models/User";
 import { getCategorySummaries, getLowStockProducts } from "@/lib/db/queries/catalogue";
+import { getPlatformSettings } from "@/lib/db/queries/settings";
 import { RepeatOrderButton } from "@/components/portal/RepeatOrderButton";
 import { LowStockAddButton } from "@/components/portal/LowStockAddButton";
 
@@ -19,9 +20,10 @@ export default async function CatalogueHomePage() {
   const user = await User.findByPk(session.userId);
   if (!user) redirect("/login");
 
-  const [categories, lowStock] = await Promise.all([
+  const [categories, lowStock, settings] = await Promise.all([
     getCategorySummaries(),
     getLowStockProducts(),
+    getPlatformSettings(),
   ]);
 
   return (
@@ -64,7 +66,7 @@ export default async function CatalogueHomePage() {
       <div className="mx-4 mb-3.5 grid grid-cols-3 gap-2 lg:mx-0">
         {[
           { icon: "🚚", val: "Next Day", label: "Delivery" },
-          { icon: "📦", val: "100 kg min", label: "Order size" },
+          { icon: "📦", val: `${settings.wholesaleMinOrderKg} kg min`, label: "Order size" },
           { icon: "🕒", val: "3 PM cutoff", label: "Order by" },
         ].map((s) => (
           <div
@@ -117,7 +119,7 @@ export default async function CatalogueHomePage() {
                   ◐ Low Stock
                 </div>
               </div>
-              <LowStockAddButton name={p.name} />
+              <LowStockAddButton product={p} />
             </div>
           ))}
         </div>
