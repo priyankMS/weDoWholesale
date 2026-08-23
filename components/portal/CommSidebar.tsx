@@ -34,7 +34,7 @@ export function CommSidebar({
   }
 
   return (
-    <div className="sticky top-18 hidden max-h-[calc(100vh-4.5rem)] w-50 shrink-0 overflow-y-auto bg-charcoal-900 py-5 lg:block">
+    <div className="sticky top-0 hidden h-[calc(100vh-4.5rem)] w-50 shrink-0 flex-col overflow-y-auto border-r border-white/10 bg-charcoal-900 py-5 lg:flex">
       <div className="mb-4 border-b border-white/10 px-4 pb-4.5">
         <div className="font-serif text-[1rem] font-black text-white">
           WeDoHalal<span className="text-primary-500">.</span>
@@ -51,16 +51,20 @@ export function CommSidebar({
             : item.href === "/announcements"
               ? unreadAnnouncements
               : 0;
+        const active = isActive(item.href);
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center gap-2.5 px-4 py-2.75 text-[0.8rem] font-bold transition-colors ${
-              isActive(item.href)
-                ? "bg-primary-500/15 text-white"
+            className={`relative flex items-center gap-2.5 px-4 py-2.75 text-[0.8rem] font-bold transition-colors ${
+              active
+                ? "bg-primary-500/10 text-white"
                 : "text-white/50 hover:bg-white/5 hover:text-white"
             }`}
           >
+            {active && (
+              <span className="absolute inset-y-0 left-0 w-0.75 bg-primary-500" />
+            )}
             <span className="text-[1rem]">{item.icon}</span>
             {item.label}
             {badge > 0 && (

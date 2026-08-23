@@ -18,6 +18,7 @@ export default async function AdminSettingsPage() {
           free_delivery_threshold: Number(settings.free_delivery_threshold ?? 150),
           wholesale_min_order_kg: Number(settings.wholesale_min_order_kg ?? 100),
           gst_rate_percent: Number(settings.gst_rate_percent ?? 5),
+          maintenance_mode: settings.maintenance_mode === "true",
         }}
       />
     </div>

@@ -91,6 +91,20 @@ export function SettingsForm({ defaultValues }: { defaultValues: AdminSettingsFo
           {isMutating ? "Saving…" : "Save Settings"}
         </button>
       </div>
+
+      <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
+        <h2 className="mb-1 text-[0.9rem] font-extrabold text-neutral-900">Maintenance Mode</h2>
+        <p className="mb-4 text-[0.82rem] text-neutral-600">
+          When on, every customer-facing page (catalogue, cart, checkout, account) redirects to
+          a maintenance notice. The admin panel stays accessible so you can turn it back off.
+        </p>
+        <label className="flex items-center gap-2.5">
+          <input type="checkbox" {...register("maintenance_mode")} className="h-4 w-4" />
+          <span className="text-[0.86rem] font-bold text-neutral-900">
+            Site is in maintenance mode
+          </span>
+        </label>
+      </div>
     </form>
   );
 }

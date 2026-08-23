@@ -227,6 +227,15 @@ export function CheckoutClient({
 
   return (
     <div className="mx-4 mt-4 mb-8 lg:mx-auto lg:max-w-lg">
+      <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-5">
+        <Link
+          href="/cart"
+          className="mb-3 inline-block text-[0.82rem] font-bold text-primary-500 hover:text-primary-600"
+        >
+          ← Back to cart
+        </Link>
+        <div className="mb-4 font-serif text-[1.35rem] font-black text-neutral-900">Checkout</div>
+
       <div className="mb-4 flex items-center justify-center gap-2">
         {STEPS.map((s, i) => {
           const idx = STEPS.findIndex((x) => x.key === step);
@@ -598,6 +607,7 @@ export function CheckoutClient({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

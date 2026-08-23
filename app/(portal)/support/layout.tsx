@@ -16,7 +16,7 @@ export default async function SupportLayout({ children }: { children: ReactNode 
   ]);
 
   return (
-    <div className="lg:flex lg:items-start">
+    <div className="lg:flex lg:items-stretch">
       <CommSidebar unreadMessages={unreadMessages} unreadAnnouncements={unreadAnnouncements} />
       <div className="lg:min-w-0 lg:flex-1">{children}</div>
     </div>

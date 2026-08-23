@@ -23,8 +23,11 @@ export async function PATCH(request: Request) {
   }
 
   await Promise.all(
+    // upsert, not update — a brand-new setting key (e.g. maintenance_mode)
+    // has no existing row yet, and a plain UPDATE silently affects zero
+    // rows in that case rather than creating one.
     Object.entries(parsed.data).map(([key, value]) =>
-      PlatformSetting.update({ value: String(value) }, { where: { key } }),
+      PlatformSetting.upsert({ key, value: String(value) }),
     ),
   );
 

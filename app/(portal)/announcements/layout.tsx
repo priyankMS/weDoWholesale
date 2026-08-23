@@ -17,7 +17,7 @@ export default async function AnnouncementsLayout({ children }: { children: Reac
   ]);
 
   return (
-    <div className="lg:flex lg:items-start">
+    <div className="lg:flex lg:items-stretch">
       <CommSidebar unreadMessages={unreadMessages} unreadAnnouncements={unreadAnnouncements} />
       <div className="lg:min-w-0 lg:flex-1">{children}</div>
     </div>
