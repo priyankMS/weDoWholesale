@@ -3,6 +3,7 @@ import { listAdminSeoRows } from "@/lib/db/queries/adminSeo";
 import { getAdminProductCategories } from "@/lib/db/queries/adminProducts";
 import { SeoInlineEditor } from "@/components/admin/SeoInlineEditor";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
+import { ExportLink } from "@/components/admin/ExportLink";
 
 const PAGE_SIZE = 25;
 
@@ -50,11 +51,18 @@ export default async function AdminSeoPage({
     return `/admin/seo?${params.toString()}`;
   }
 
+  const exportParams = new URLSearchParams();
+  if (sp.category) exportParams.set("category", sp.category);
+  if (sp.filter) exportParams.set("filter", sp.filter);
+
   return (
     <div className="p-6">
-      <div className="mb-5">
-        <h1 className="font-serif text-xl font-black text-neutral-900">SEO Manager</h1>
-        <p className="text-[0.9rem] text-neutral-500">{missingCount} products need attention</p>
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-xl font-black text-neutral-900">SEO Manager</h1>
+          <p className="text-[0.9rem] text-neutral-500">{missingCount} products need attention</p>
+        </div>
+        <ExportLink href={`/api/admin/export/seo?${exportParams.toString()}`} />
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2.5">

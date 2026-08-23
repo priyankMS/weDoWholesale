@@ -20,6 +20,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
-  await variant.update(parsed.data);
+  const { unit, ...rest } = parsed.data;
+  await variant.update({ ...rest, ...(unit !== undefined ? { per: unit } : {}) });
   return NextResponse.json({ variant });
 }

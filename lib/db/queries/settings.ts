@@ -5,6 +5,7 @@ export type PlatformSettings = {
   freeDeliveryThreshold: number;
   wholesaleMinOrderKg: number;
   gstRatePercent: number;
+  maintenanceMode: boolean;
 };
 
 const DEFAULTS: PlatformSettings = {
@@ -12,6 +13,7 @@ const DEFAULTS: PlatformSettings = {
   freeDeliveryThreshold: 150,
   wholesaleMinOrderKg: 100,
   gstRatePercent: 5,
+  maintenanceMode: false,
 };
 
 export async function getPlatformSettings(): Promise<PlatformSettings> {
@@ -22,5 +24,13 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
     freeDeliveryThreshold: Number(raw.free_delivery_threshold ?? DEFAULTS.freeDeliveryThreshold),
     wholesaleMinOrderKg: Number(raw.wholesale_min_order_kg ?? DEFAULTS.wholesaleMinOrderKg),
     gstRatePercent: Number(raw.gst_rate_percent ?? DEFAULTS.gstRatePercent),
+    maintenanceMode: raw.maintenance_mode === "true",
   };
+}
+
+// Proxy (proxy.ts) checks this on every customer-facing request — a
+// single indexed primary-key lookup, cheap enough not to need caching.
+export async function isMaintenanceModeOn(): Promise<boolean> {
+  const row = await PlatformSetting.findByPk("maintenance_mode");
+  return row?.value === "true";
 }

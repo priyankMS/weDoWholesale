@@ -27,6 +27,7 @@ export type AdminProductDetail = {
   pricing: ProductPricingVariant[];
   facets: { conditions: string[]; bones: string[]; skins: string[] };
   categories: string[];
+  suppliers: { id: number; name: string }[];
 };
 
 export async function getAdminProductDetail(id: number) {

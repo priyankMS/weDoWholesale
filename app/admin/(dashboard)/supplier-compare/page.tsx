@@ -1,6 +1,7 @@
 import { getSupplierCompareData } from "@/lib/db/queries/adminSupplierCompare";
 import { getAdminProductCategories } from "@/lib/db/queries/adminProducts";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
+import { ExportLink } from "@/components/admin/ExportLink";
 
 export default async function AdminSupplierComparePage({
   searchParams,
@@ -16,13 +17,20 @@ export default async function AdminSupplierComparePage({
 
   const filteredRows = sp.conflicts === "1" ? rows.filter((r) => r.hasConflict) : rows;
 
+  const exportParams = new URLSearchParams();
+  if (sp.category) exportParams.set("category", sp.category);
+  if (sp.conflicts) exportParams.set("conflicts", sp.conflicts);
+
   return (
     <div className="p-6">
-      <div className="mb-5">
-        <h1 className="font-serif text-xl font-black text-neutral-900">Supplier Compare</h1>
-        <p className="text-[0.9rem] text-neutral-500">
-          Comparing {suppliers.length} suppliers · {sharedCount} shared products
-        </p>
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-xl font-black text-neutral-900">Supplier Compare</h1>
+          <p className="text-[0.9rem] text-neutral-500">
+            Comparing {suppliers.length} suppliers · {sharedCount} shared products
+          </p>
+        </div>
+        <ExportLink href={`/api/admin/export/supplier-compare?${exportParams.toString()}`} />
       </div>
 
       <form className="mb-4 flex flex-wrap items-center gap-2.5" method="get">

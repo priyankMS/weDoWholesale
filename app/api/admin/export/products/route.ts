@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth/adminSession";
 import { listAdminProducts } from "@/lib/db/queries/adminProducts";
+import { toCsvResponse } from "@/lib/csv/toCsvResponse";
 
-function csvCell(value: string | number | null): string {
-  const str = value == null ? "" : String(value);
-  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
-}
-
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
-  const { products } = await listAdminProducts({ pageSize: 100_000 });
+  const { searchParams } = new URL(request.url);
+  const search = searchParams.get("q") ?? undefined;
+  const category = searchParams.get("category") ?? undefined;
+
+  const { products } = await listAdminProducts({ search, category, pageSize: 100_000 });
 
   const header = [
     "SKU",
@@ -25,23 +25,16 @@ export async function GET() {
     "Retail Price",
   ];
   const rows = products.map((p) => [
-    csvCell(p.sku),
-    csvCell(p.name),
-    csvCell(p.category),
-    csvCell(p.type),
-    csvCell(p.variantCount),
-    csvCell(p.supplierNames.join("; ")),
-    csvCell(p.stockState),
-    csvCell(p.seoComplete ? "Complete" : "Missing"),
-    csvCell(p.retailPrice != null ? p.retailPrice.toFixed(2) : ""),
+    p.sku,
+    p.name,
+    p.category,
+    p.type,
+    p.variantCount,
+    p.supplierNames.join("; "),
+    p.stockState,
+    p.seoComplete ? "Complete" : "Missing",
+    p.retailPrice != null ? p.retailPrice.toFixed(2) : "",
   ]);
-  const csv = [header, ...rows].map((r) => r.join(",")).join("\n");
 
-  const date = new Date().toISOString().slice(0, 10);
-  return new NextResponse(csv, {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="wedohalal-products-${date}.csv"`,
-    },
-  });
+  return toCsvResponse("products", header, rows);
 }

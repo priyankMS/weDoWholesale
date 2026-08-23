@@ -2,6 +2,7 @@ import { WdhSupplier } from "@/lib/db/models/WdhSupplier";
 import { WdhVariantPricing } from "@/lib/db/models/WdhVariantPricing";
 import { SupplierModal } from "@/components/admin/SupplierModal";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
+import { ExportLink } from "@/components/admin/ExportLink";
 
 export default async function AdminSuppliersPage() {
   const [suppliers, pricingRows] = await Promise.all([
@@ -25,13 +26,16 @@ export default async function AdminSuppliersPage() {
           <h1 className="font-serif text-xl font-black text-neutral-900">Suppliers</h1>
           <p className="text-[0.9rem] text-neutral-500">{suppliers.length} registered suppliers</p>
         </div>
-        <SupplierModal
-          trigger={
-            <button className="cursor-pointer rounded-lg bg-red-600 px-4 py-2 text-[0.9rem] font-bold text-white hover:bg-red-700">
-              + Add Supplier
-            </button>
-          }
-        />
+        <div className="flex items-center gap-2.5">
+          <ExportLink href="/api/admin/export/suppliers" />
+          <SupplierModal
+            trigger={
+              <button className="cursor-pointer rounded-lg bg-red-600 px-4 py-2 text-[0.9rem] font-bold text-white hover:bg-red-700">
+                + Add Supplier
+              </button>
+            }
+          />
+        </div>
       </div>
 
       <AdminTableCard>

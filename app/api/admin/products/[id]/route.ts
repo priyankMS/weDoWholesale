@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth/adminSession";
 import { WdhProduct } from "@/lib/db/models/WdhProduct";
+import { WdhSupplier } from "@/lib/db/models/WdhSupplier";
 import { adminProductUpdateSchema } from "@/lib/validation/adminProducts";
 import {
   listVariantsForProduct,
@@ -21,14 +22,16 @@ export async function GET(
   const product = await WdhProduct.findByPk(productId);
   if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
 
-  const [variants, pricing, facets, categories] = await Promise.all([
+  const [variants, pricing, facets, categories, supplierRows] = await Promise.all([
     listVariantsForProduct(productId),
     getPricingForProduct(productId),
     getVariantFacets(),
     getAdminProductCategories(),
+    WdhSupplier.findAll({ order: [["sortOrder", "ASC"]] }),
   ]);
+  const suppliers = supplierRows.map((s) => ({ id: s.id, name: s.name }));
 
-  return NextResponse.json({ product, variants, pricing, facets, categories });
+  return NextResponse.json({ product, variants, pricing, facets, categories, suppliers });
 }
 
 export async function PATCH(

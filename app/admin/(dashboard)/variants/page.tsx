@@ -3,6 +3,7 @@ import { listAdminVariants, getVariantFacets } from "@/lib/db/queries/adminVaria
 import { getAdminProductCategories } from "@/lib/db/queries/adminProducts";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
 import { StockBadge } from "@/components/admin/StockBadge";
+import { ExportLink } from "@/components/admin/ExportLink";
 
 const PAGE_SIZE = 25;
 
@@ -39,11 +40,20 @@ export default async function AdminVariantsPage({
     return `/admin/variants?${params.toString()}`;
   }
 
+  const exportParams = new URLSearchParams();
+  if (sp.q) exportParams.set("q", sp.q);
+  if (sp.category) exportParams.set("category", sp.category);
+  if (sp.condition) exportParams.set("condition", sp.condition);
+  if (sp.bone) exportParams.set("bone", sp.bone);
+
   return (
     <div className="p-6">
-      <div className="mb-5">
-        <h1 className="font-serif text-xl font-black text-neutral-900">Variants &amp; SKUs</h1>
-        <p className="text-[0.9rem] text-neutral-500">{total} variants across all products</p>
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-xl font-black text-neutral-900">Variants &amp; SKUs</h1>
+          <p className="text-[0.9rem] text-neutral-500">{total} variants across all products</p>
+        </div>
+        <ExportLink href={`/api/admin/export/variants?${exportParams.toString()}`} />
       </div>
 
       <form className="mb-4 flex flex-wrap items-center gap-2.5" method="get">

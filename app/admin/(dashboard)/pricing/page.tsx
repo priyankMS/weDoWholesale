@@ -5,6 +5,7 @@ import { WdhSupplier } from "@/lib/db/models/WdhSupplier";
 import { PricingRow } from "@/components/admin/PricingRow";
 import { NewPricingRow } from "@/components/admin/NewPricingRow";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
+import { ExportLink } from "@/components/admin/ExportLink";
 
 const PAGE_SIZE = 25;
 
@@ -34,13 +35,20 @@ export default async function AdminPricingPage({
     return `/admin/pricing?${params.toString()}`;
   }
 
+  const exportParams = new URLSearchParams();
+  if (sp.category) exportParams.set("category", sp.category);
+  if (sp.supplier) exportParams.set("supplier", sp.supplier);
+
   return (
     <div className="p-6">
-      <div className="mb-5">
-        <h1 className="font-serif text-xl font-black text-neutral-900">Price Control</h1>
-        <p className="text-[0.9rem] text-neutral-500">
-          {total} pricing rows · rows highlighted red have margin under 10%
-        </p>
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-xl font-black text-neutral-900">Price Control</h1>
+          <p className="text-[0.9rem] text-neutral-500">
+            {total} pricing rows · rows highlighted red have margin under 10%
+          </p>
+        </div>
+        <ExportLink href={`/api/admin/export/pricing?${exportParams.toString()}`} />
       </div>
 
       <form className="mb-4 flex flex-wrap items-center gap-2.5" method="get">

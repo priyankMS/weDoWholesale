@@ -6,7 +6,9 @@ export const adminVariantUpdateSchema = z.object({
   cutType: z.string().trim().max(100).nullable().optional(),
   boneType: z.string().trim().max(100).nullable().optional(),
   skinType: z.string().trim().max(100).nullable().optional(),
+  unit: z.string().trim().max(20).nullable().optional(),
   basePrice: z.coerce.number().min(0).nullable().optional(),
+  discountPrice: z.coerce.number().min(0).nullable().optional(),
   stockCount: z.coerce.number().int().min(0).nullable().optional(),
 });
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { listAdminOrders } from "@/lib/db/queries/adminOrders";
 import { OrderStatusSelect } from "@/components/admin/OrderStatusSelect";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
+import { ExportLink } from "@/components/admin/ExportLink";
 import type { OrderStatus } from "@/lib/db/models/Order";
 
 const PAGE_SIZE = 20;
@@ -46,11 +47,16 @@ export default async function AdminOrdersPage({
     return `/admin/orders?${params.toString()}`;
   }
 
+  const exportHref = `/api/admin/export/orders${sp.status ? `?status=${sp.status}` : ""}`;
+
   return (
     <div className="p-6">
-      <div className="mb-5">
-        <h1 className="font-serif text-xl font-black text-neutral-900">Orders</h1>
-        <p className="text-[0.9rem] text-neutral-500">{total} orders</p>
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-xl font-black text-neutral-900">Orders</h1>
+          <p className="text-[0.9rem] text-neutral-500">{total} orders</p>
+        </div>
+        <ExportLink href={exportHref} />
       </div>
 
       <div className="mb-4 flex flex-wrap gap-1.5">

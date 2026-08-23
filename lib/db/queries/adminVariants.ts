@@ -17,9 +17,11 @@ export type AdminVariantRow = {
   boneType: string | null;
   skinType: string | null;
   label: string;
+  unit: string | null;
   stockCount: number;
   stockState: StockState;
   basePrice: number | null;
+  discountPrice: number | null;
   supplierNames: string[];
 };
 
@@ -93,9 +95,11 @@ export async function listAdminVariants(
       boneType: v.boneType || null,
       skinType: v.skinType || null,
       label: variantLabel(v),
+      unit: v.per || null,
       stockCount: v.stockCount ?? 0,
       stockState: stockStateFor(v.stockCount ?? null),
       basePrice: v.basePrice != null ? Number(v.basePrice) : null,
+      discountPrice: v.discountPrice != null ? Number(v.discountPrice) : null,
       supplierNames: Array.from(supplierNames),
     };
   });
@@ -128,9 +132,11 @@ export async function listVariantsForProduct(productId: number): Promise<AdminVa
       boneType: v.boneType || null,
       skinType: v.skinType || null,
       label: variantLabel(v),
+      unit: v.per || null,
       stockCount: v.stockCount ?? 0,
       stockState: stockStateFor(v.stockCount ?? null),
       basePrice: v.basePrice != null ? Number(v.basePrice) : null,
+      discountPrice: v.discountPrice != null ? Number(v.discountPrice) : null,
       supplierNames: Array.from(supplierNames),
     };
   });

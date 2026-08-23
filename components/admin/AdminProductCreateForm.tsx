@@ -20,19 +20,27 @@ const labelClass = "mb-1.5 block text-[0.8rem] font-bold text-neutral-500";
 
 export function AdminProductCreateForm({
   suppliers,
+  categories,
+  typesByCategory,
 }: {
   suppliers: { id: number; name: string }[];
+  categories: string[];
+  typesByCategory: Record<string, string[]>;
 }) {
   const router = useRouter();
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<AdminProductCreateFormValues>({
     resolver: zodResolver(adminProductCreateSchema),
     defaultValues: { unit: "kg", stockCount: 0 },
   });
+
+  const selectedCategory = watch("category");
+  const types = typesByCategory[selectedCategory] ?? [];
 
   const { trigger, isMutating } = useSWRMutation(
     "admin/products/new",
@@ -65,12 +73,26 @@ export function AdminProductCreateForm({
           </div>
           <div>
             <label className={labelClass}>Category</label>
-            <input {...register("category")} className={inputClass} placeholder="Chicken" />
+            <select {...register("category")} className={inputClass} defaultValue="">
+              <option value="" disabled>
+                Select a category…
+              </option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
             <FieldError message={errors.category?.message} />
           </div>
           <div>
             <label className={labelClass}>Type / Part</label>
-            <input {...register("type")} className={inputClass} />
+            <input {...register("type")} className={inputClass} list="product-type-options" />
+            <datalist id="product-type-options">
+              {types.map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
           </div>
         </div>
       </div>
@@ -120,7 +142,13 @@ export function AdminProductCreateForm({
           </div>
           <div>
             <label className={labelClass}>Unit</label>
-            <input {...register("unit")} className={inputClass} placeholder="kg" />
+            <input {...register("unit")} className={inputClass} placeholder="kg" list="unit-options" />
+            <datalist id="unit-options">
+              <option value="kg" />
+              <option value="lb" />
+              <option value="pack" />
+              <option value="unit" />
+            </datalist>
             <FieldError message={errors.unit?.message} />
           </div>
           <div>

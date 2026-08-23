@@ -2,6 +2,7 @@ import Link from "next/link";
 import { listAdminCustomers } from "@/lib/db/queries/adminCustomers";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
 import { CustomerStatusActions } from "@/components/admin/CustomerStatusActions";
+import { ExportLink } from "@/components/admin/ExportLink";
 import type { AccountStatus } from "@/lib/db/models/User";
 
 const PAGE_SIZE = 25;
@@ -66,14 +67,21 @@ export default async function AdminCustomersPage({
     return `/admin/customers?${params.toString()}`;
   }
 
+  const exportParams = new URLSearchParams();
+  exportParams.set("status", status);
+  if (sp.q) exportParams.set("q", sp.q);
+
   return (
     <div className="p-6">
-      <div className="mb-5">
-        <h1 className="font-serif text-xl font-black text-neutral-900">Customers</h1>
-        <p className="text-[0.9rem] text-neutral-500">
-          Wholesale account applications — approve or reject sign-ups. Only approved accounts can
-          check out.
-        </p>
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-xl font-black text-neutral-900">Customers</h1>
+          <p className="text-[0.9rem] text-neutral-500">
+            Wholesale account applications — approve or reject sign-ups. Only approved accounts can
+            check out.
+          </p>
+        </div>
+        <ExportLink href={`/api/admin/export/customers?${exportParams.toString()}`} />
       </div>
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">

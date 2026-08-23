@@ -1,13 +1,21 @@
 import Link from "next/link";
 import { WdhSupplier } from "@/lib/db/models/WdhSupplier";
 import { AdminProductCreateForm } from "@/components/admin/AdminProductCreateForm";
+import {
+  getAdminProductCategories,
+  getAdminProductTypesByCategory,
+} from "@/lib/db/queries/adminProducts";
 
 export default async function AdminProductNewPage() {
-  const suppliers = await WdhSupplier.findAll({
-    where: { isActive: true },
-    order: [["sortOrder", "ASC"]],
-    attributes: ["id", "name"],
-  });
+  const [suppliers, categories, typesByCategory] = await Promise.all([
+    WdhSupplier.findAll({
+      where: { isActive: true },
+      order: [["sortOrder", "ASC"]],
+      attributes: ["id", "name"],
+    }),
+    getAdminProductCategories(),
+    getAdminProductTypesByCategory(),
+  ]);
 
   return (
     <div className="p-6">
@@ -23,6 +31,8 @@ export default async function AdminProductNewPage() {
 
       <AdminProductCreateForm
         suppliers={suppliers.map((s) => ({ id: s.id, name: s.name }))}
+        categories={categories}
+        typesByCategory={typesByCategory}
       />
     </div>
   );

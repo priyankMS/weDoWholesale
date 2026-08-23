@@ -34,7 +34,7 @@ export function CommSidebar({
   }
 
   return (
-    <div className="hidden w-50 shrink-0 bg-charcoal-900 py-5 lg:block">
+    <div className="sticky top-18 hidden max-h-[calc(100vh-4.5rem)] w-50 shrink-0 overflow-y-auto bg-charcoal-900 py-5 lg:block">
       <div className="mb-4 border-b border-white/10 px-4 pb-4.5">
         <div className="font-serif text-[1rem] font-black text-white">
           WeDoHalal<span className="text-primary-500">.</span>

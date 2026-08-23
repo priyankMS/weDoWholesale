@@ -188,3 +188,21 @@ export async function getAdminProductCategories(): Promise<string[]> {
   const rows = await WdhProduct.findAll({ attributes: ["category"], group: ["category"] });
   return rows.map((r) => r.category ?? "").filter(Boolean).sort((a, b) => a.localeCompare(b));
 }
+
+// 100+ distinct values (Shoulder, Kabab, Sausage, Sujuk, ...) — too varied
+// for a restrictive <select>, so this backs a <datalist> autocomplete on
+// the New Product form instead: suggests real part names but still lets
+// an admin type a genuinely new one. Grouped by category so picking
+// "Fish" doesn't suggest "Chuck" or "Cosmetics" from unrelated categories.
+export async function getAdminProductTypesByCategory(): Promise<Record<string, string[]>> {
+  const rows = await WdhProduct.findAll({ attributes: ["category", "type"], group: ["category", "type"] });
+  const byCategory: Record<string, string[]> = {};
+  for (const r of rows) {
+    if (!r.category || !r.type) continue;
+    (byCategory[r.category] ??= []).push(r.type);
+  }
+  for (const category of Object.keys(byCategory)) {
+    byCategory[category].sort((a, b) => a.localeCompare(b));
+  }
+  return byCategory;
+}
