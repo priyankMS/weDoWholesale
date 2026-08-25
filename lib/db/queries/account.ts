@@ -94,6 +94,12 @@ export type RevisionEntry = {
   productName: string;
   sku: string | null;
   createdAt: Date;
+  weightAdjustment: {
+    beforeQty: number;
+    afterQty: number;
+    adjustmentAmount: number;
+    note: string | null;
+  } | null;
 };
 
 export type OrderDetail = {
@@ -162,12 +168,34 @@ export async function getOrderDetail(
       unitPrice: Number(i.unitPrice),
       totalPrice: Number(i.totalPrice),
     })),
-    revisions: revisionRows.map((r) => ({
-      action: r.action,
-      productName: r.productName,
-      sku: r.sku ?? null,
-      createdAt: r.createdAt,
-    })),
+    revisions: revisionRows.map((r) => {
+      let weightAdjustment: RevisionEntry["weightAdjustment"] = null;
+      if (r.action === "updated" && r.snapshotBefore && r.snapshotAfter) {
+        try {
+          const before = JSON.parse(r.snapshotBefore) as {
+            quantity: number;
+            totalPrice: number;
+            note?: string | null;
+          };
+          const after = JSON.parse(r.snapshotAfter) as { quantity: number; totalPrice: number };
+          weightAdjustment = {
+            beforeQty: before.quantity,
+            afterQty: after.quantity,
+            adjustmentAmount: Number((after.totalPrice - before.totalPrice).toFixed(2)),
+            note: before.note ?? null,
+          };
+        } catch {
+          weightAdjustment = null;
+        }
+      }
+      return {
+        action: r.action,
+        productName: r.productName,
+        sku: r.sku ?? null,
+        createdAt: r.createdAt,
+        weightAdjustment,
+      };
+    }),
   };
 }
 

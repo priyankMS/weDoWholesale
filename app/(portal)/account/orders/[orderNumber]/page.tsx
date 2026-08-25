@@ -68,8 +68,14 @@ export default async function OrderDetailPage({
   if (!order) notFound();
 
   const cancelled = order.orderStatus === "cancelled" || order.orderStatus === "returned";
-  const substitutedNames = new Set(
-    order.revisions.filter((r) => r.action === "updated").map((r) => r.productName),
+  const updatedRevisions = order.revisions.filter((r) => r.action === "updated");
+  const substitutedNames = new Set(updatedRevisions.map((r) => r.productName));
+  // A weight adjustment reuses the same "updated" action as a real
+  // substitution (same audit trail, same revision log) but isn't one —
+  // the product is unchanged, only the settled weight — so it gets its
+  // own badge/copy instead of being mislabeled "Substituted".
+  const weightAdjustedNames = new Set(
+    updatedRevisions.filter((r) => r.weightAdjustment).map((r) => r.productName),
   );
 
   return (
@@ -104,6 +110,7 @@ export default async function OrderDetailPage({
       <div className="mx-4 mb-1 divide-y divide-neutral-200 overflow-hidden rounded-2xl border-[1.5px] border-neutral-200 bg-white lg:mx-0">
         {order.items.map((item, i) => {
           const substituted = substitutedNames.has(item.productName);
+          const weightAdjusted = weightAdjustedNames.has(item.productName);
           return (
             <div
               key={`${item.productName}-${i}`}
@@ -121,7 +128,7 @@ export default async function OrderDetailPage({
                   {item.productName}
                   {substituted && (
                     <span className="ml-1.5 rounded-md border border-amber-300 bg-amber-50 px-1.5 py-0.25 text-[0.62rem] font-extrabold text-amber-700">
-                      Substituted
+                      {weightAdjusted ? "Weight adjusted" : "Substituted"}
                     </span>
                   )}
                 </div>
@@ -129,7 +136,9 @@ export default async function OrderDetailPage({
                   className={`text-[0.72rem] ${substituted ? "text-amber-700" : "text-neutral-400"}`}
                 >
                   {substituted
-                    ? "See revision log below for details"
+                    ? weightAdjusted
+                      ? "Final weight settled — see revision log below"
+                      : "See revision log below for details"
                     : `${item.quantity} · ${item.sku ?? ""}`}
                 </div>
               </div>
@@ -211,9 +220,36 @@ export default async function OrderDetailPage({
                 />
                 <div className="flex-1">
                   <div className="mb-0.5 text-[0.84rem] font-bold text-neutral-900">
-                    {ACTION_LABEL[r.action] ?? r.action} — {r.productName}
+                    {r.weightAdjustment ? "Final weight recorded" : (ACTION_LABEL[r.action] ?? r.action)} —{" "}
+                    {r.productName}
                   </div>
-                  <div className="text-[0.7rem] text-neutral-400">{formatDateTime(r.createdAt)}</div>
+                  {r.weightAdjustment ? (
+                    <>
+                      <div className="text-[0.78rem] text-neutral-500">
+                        Ordered {r.weightAdjustment.beforeQty}kg → Actual{" "}
+                        {r.weightAdjustment.afterQty}kg
+                        {Math.abs(r.weightAdjustment.adjustmentAmount) >= 0.005 && (
+                          <span
+                            className={`ml-1.5 font-bold ${
+                              r.weightAdjustment.adjustmentAmount > 0
+                                ? "text-amber-600"
+                                : "text-green-600"
+                            }`}
+                          >
+                            {r.weightAdjustment.adjustmentAmount > 0
+                              ? `${formatMoney(r.weightAdjustment.adjustmentAmount)} due`
+                              : `${formatMoney(Math.abs(r.weightAdjustment.adjustmentAmount))} refund`}
+                          </span>
+                        )}
+                      </div>
+                      {r.weightAdjustment.note && (
+                        <div className="mt-0.5 text-[0.76rem] text-neutral-500 italic">
+                          &quot;{r.weightAdjustment.note}&quot;
+                        </div>
+                      )}
+                    </>
+                  ) : null}
+                  <div className="mt-0.5 text-[0.7rem] text-neutral-400">{formatDateTime(r.createdAt)}</div>
                 </div>
               </div>
             ))}

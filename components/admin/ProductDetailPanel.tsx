@@ -468,6 +468,14 @@ export function ProductDetailPanel({
                     Retail Price / Sale Price here are what customers actually see on the
                     website — the Pricing tab tracks supplier cost, not the storefront price.
                   </div>
+                  <div className="mb-1 grid grid-cols-[1fr_90px_90px_80px_80px_60px] gap-1.5 px-0.5 text-[11px] font-semibold tracking-wide text-[#9a9490] uppercase">
+                    <span>SKU</span>
+                    <span>Condition</span>
+                    <span>Cut</span>
+                    <span>Bone</span>
+                    <span>Skin</span>
+                    <span>Stock</span>
+                  </div>
                   <div className="space-y-3">
                     {detail.variants.map((v) => {
                       const draft = variantDrafts[v.id] ?? {

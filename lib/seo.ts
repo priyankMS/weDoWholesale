@@ -1,13 +1,7 @@
-// Pure SEO-scoring logic shared between the server-rendered SEO Manager
-// (lib/db/queries/adminSeo.ts) and the client-side product detail panel's
-// live score preview — kept dependency-free (no Sequelize imports) so it's
-// safe to bundle into "use client" components.
+
 
 export type SeoStatus = "complete" | "missing" | "warning";
 
-// A title under 30 chars or a description under 70 chars reads as too
-// short for a search snippet, so those count as "warning" rather than
-// "complete" even when the field is non-empty.
 export const SEO_MIN_TITLE_LEN = 30;
 export const SEO_MIN_DESC_LEN = 70;
 

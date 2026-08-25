@@ -2,8 +2,12 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getAdminOrderDetail } from "@/lib/db/queries/adminOrders";
 import { OrderStatusSelect } from "@/components/admin/OrderStatusSelect";
+import { WeightAdjustmentTable } from "@/components/admin/WeightAdjustmentTable";
 import { User } from "@/lib/db/models/User";
 import { OrderItem } from "@/lib/db/models/OrderItem";
+import { OrderItemHistory } from "@/lib/db/models/OrderItemHistory";
+
+type WeightSnapshot = { quantity: number; unitPrice: number; totalPrice: number; note?: string | null };
 
 export default async function AdminOrderDetailPage({
   params,
@@ -16,6 +20,20 @@ export default async function AdminOrderDetailPage({
 
   const user = (order as typeof order & { User?: User }).User;
   const items = (order as typeof order & { OrderItems?: OrderItem[] }).OrderItems ?? [];
+
+  const adjustmentHistory = await OrderItemHistory.findAll({
+    where: { orderId: order.id, action: "updated" },
+    order: [["createdAt", "DESC"]],
+  });
+  const totalAdjustment = adjustmentHistory.reduce((sum, h) => {
+    try {
+      const before: WeightSnapshot = JSON.parse(h.snapshotBefore ?? "{}");
+      const after: WeightSnapshot = JSON.parse(h.snapshotAfter ?? "{}");
+      return sum + ((after.totalPrice ?? 0) - (before.totalPrice ?? 0));
+    } catch {
+      return sum;
+    }
+  }, 0);
 
   return (
     <div className="p-6">
@@ -30,45 +48,82 @@ export default async function AdminOrderDetailPage({
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-4">
           <div className="rounded-xl border border-neutral-200 bg-white">
-            <div className="border-b border-neutral-200 px-4 py-3 text-[0.9rem] font-bold text-neutral-900">
-              Order Items
+            <div className="border-b border-neutral-200 px-4 py-3">
+              <div className="text-[0.9rem] font-bold text-neutral-900">Order Items</div>
+              <p className="mt-0.5 text-[0.78rem] text-neutral-500">
+                Whole cuts don&apos;t always hit an exact weight. Enter the actual delivered weight
+                to record the adjustment and email the customer — this does not touch the
+                original invoice or charge/refund automatically.
+              </p>
             </div>
-            <table className="w-full text-left text-[0.9rem]">
-              <thead>
-                <tr className="border-b border-neutral-100 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
-                  <th className="px-4 py-2">Product</th>
-                  <th className="px-4 py-2">SKU</th>
-                  <th className="px-4 py-2">Qty</th>
-                  <th className="px-4 py-2">Unit Price</th>
-                  <th className="px-4 py-2">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id} className="border-b border-neutral-100 last:border-0">
-                    <td className="px-4 py-2.5 font-semibold text-neutral-900">{item.productName}</td>
-                    <td className="px-4 py-2.5 font-mono text-[0.84rem] text-neutral-500">
-                      {item.sku || "—"}
-                    </td>
-                    <td className="px-4 py-2.5 text-neutral-600">{Number(item.quantity)}</td>
-                    <td className="px-4 py-2.5 text-neutral-600">${Number(item.unitPrice).toFixed(2)}</td>
-                    <td className="px-4 py-2.5 font-semibold text-neutral-900">
-                      ${Number(item.totalPrice).toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-                {items.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-neutral-400">
-                      No items.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <WeightAdjustmentTable
+                orderId={order.id}
+                items={items.map((item) => ({
+                  id: item.id,
+                  productName: item.productName,
+                  sku: item.sku,
+                  quantity: Number(item.quantity),
+                  unitPrice: Number(item.unitPrice),
+                  totalPrice: Number(item.totalPrice),
+                }))}
+              />
+            </div>
           </div>
+
+          {adjustmentHistory.length > 0 && (
+            <div className="rounded-xl border border-neutral-200 bg-white">
+              <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
+                <div className="text-[0.9rem] font-bold text-neutral-900">Weight Adjustment History</div>
+                <div
+                  className={`text-[0.86rem] font-bold ${
+                    totalAdjustment > 0
+                      ? "text-amber-600"
+                      : totalAdjustment < 0
+                        ? "text-green-600"
+                        : "text-neutral-400"
+                  }`}
+                >
+                  {totalAdjustment === 0
+                    ? "Settled — no net change"
+                    : totalAdjustment > 0
+                      ? `$${totalAdjustment.toFixed(2)} due from customer`
+                      : `$${Math.abs(totalAdjustment).toFixed(2)} owed to customer`}
+                </div>
+              </div>
+              <div className="divide-y divide-neutral-100">
+                {adjustmentHistory.map((h) => {
+                  let before: WeightSnapshot = { quantity: 0, unitPrice: 0, totalPrice: 0 };
+                  let after: WeightSnapshot = { quantity: 0, unitPrice: 0, totalPrice: 0 };
+                  try {
+                    before = JSON.parse(h.snapshotBefore ?? "{}");
+                    after = JSON.parse(h.snapshotAfter ?? "{}");
+                  } catch {
+                    // leave defaults
+                  }
+                  const diff = (after.totalPrice ?? 0) - (before.totalPrice ?? 0);
+                  return (
+                    <div key={h.id} className="px-4 py-2.5 text-[0.86rem]">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-neutral-900">{h.productName}</span>
+                        <span
+                          className={`font-bold ${diff > 0 ? "text-amber-600" : diff < 0 ? "text-green-600" : "text-neutral-400"}`}
+                        >
+                          {diff > 0 ? "+" : ""}${diff.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="text-[0.78rem] text-neutral-500">
+                        {before.quantity}kg → {after.quantity}kg · {new Date(h.createdAt).toLocaleString()}
+                        {before.note ? ` · "${before.note}"` : ""}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">

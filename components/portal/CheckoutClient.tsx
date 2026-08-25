@@ -294,54 +294,69 @@ export function CheckoutClient({
           </div>
 
           {method === "delivery" ? (
-            <div className="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              <label className="col-span-2 text-[0.78rem] font-semibold text-neutral-700">
-                Business name
-                <input
-                  value={business}
-                  onChange={(e) => setBusiness(e.target.value)}
-                  className="mt-1 w-full rounded-[10px] border-[1.5px] border-neutral-200 px-3 py-2.5 text-[0.88rem] outline-none focus:border-primary-500"
-                />
-              </label>
-              <label className="col-span-2 text-[0.78rem] font-semibold text-neutral-700">
-                Street address
-                <input
-                  value={street}
-                  onChange={(e) => setStreet(e.target.value)}
-                  className="mt-1 w-full rounded-[10px] border-[1.5px] border-neutral-200 px-3 py-2.5 text-[0.88rem] outline-none focus:border-primary-500"
-                />
-              </label>
-              <label className="text-[0.78rem] font-semibold text-neutral-700">
-                City
-                <select
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="mt-1 w-full rounded-[10px] border-[1.5px] border-neutral-200 bg-white px-3 py-2.5 text-[0.88rem] outline-none focus:border-primary-500"
-                >
-                  <option value="">Select</option>
-                  {CITIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="text-[0.78rem] font-semibold text-neutral-700">
-                Postal code
-                <input
-                  value={postalCode}
-                  onChange={(e) => setPostalCode(e.target.value)}
-                  className="mt-1 w-full rounded-[10px] border-[1.5px] border-neutral-200 px-3 py-2.5 text-[0.88rem] outline-none focus:border-primary-500"
-                />
-              </label>
-              <label className="col-span-2 text-[0.78rem] font-semibold text-neutral-700">
-                Phone
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="mt-1 w-full rounded-[10px] border-[1.5px] border-neutral-200 px-3 py-2.5 text-[0.88rem] outline-none focus:border-primary-500"
-                />
-              </label>
+            <div>
+              <div className="mb-2 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase">
+                Delivery address
+              </div>
+              <div className="mb-4 overflow-hidden rounded-2xl border-[1.5px] border-neutral-200 bg-white">
+                <div className="flex items-center justify-between gap-3 border-b border-neutral-100 px-3.5 py-2.5">
+                  <span className="shrink-0 text-[0.78rem] font-semibold text-neutral-500">
+                    Business
+                  </span>
+                  <input
+                    value={business}
+                    onChange={(e) => setBusiness(e.target.value)}
+                    className="w-full bg-transparent text-right text-[0.88rem] font-bold text-neutral-900 outline-none"
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-3 border-b border-neutral-100 px-3.5 py-2.5">
+                  <span className="shrink-0 text-[0.78rem] font-semibold text-neutral-500">
+                    Street
+                  </span>
+                  <input
+                    value={street}
+                    onChange={(e) => setStreet(e.target.value)}
+                    className="w-full bg-transparent text-right text-[0.88rem] font-bold text-neutral-900 outline-none"
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-3 border-b border-neutral-100 px-3.5 py-2.5">
+                  <span className="shrink-0 text-[0.78rem] font-semibold text-neutral-500">
+                    City
+                  </span>
+                  <select
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full bg-transparent text-right text-[0.88rem] font-bold text-neutral-900 outline-none"
+                  >
+                    <option value="">Select</option>
+                    {CITIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center justify-between gap-3 border-b border-neutral-100 px-3.5 py-2.5">
+                  <span className="shrink-0 text-[0.78rem] font-semibold text-neutral-500">
+                    Postal code
+                  </span>
+                  <input
+                    value={postalCode}
+                    onChange={(e) => setPostalCode(e.target.value)}
+                    className="w-full bg-transparent text-right text-[0.88rem] font-bold text-neutral-900 outline-none"
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-3 px-3.5 py-2.5">
+                  <span className="shrink-0 text-[0.78rem] font-semibold text-neutral-500">
+                    Phone
+                  </span>
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full bg-transparent text-right text-[0.88rem] font-bold text-neutral-900 outline-none"
+                  />
+                </div>
+              </div>
             </div>
           ) : (
             <div className="mb-4 flex items-start gap-3 rounded-2xl border-[1.5px] border-neutral-200 bg-white p-3.5">

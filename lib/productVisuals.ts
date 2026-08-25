@@ -1,7 +1,4 @@
-// Per-category gradient used behind the product emoji on cards. Lives
-// separately from CATEGORY_ICONS (lib/db/queries/catalogue.ts) because
-// that module pulls in Sequelize and can't be imported from client
-// components — see the note in lib/format.ts for the same constraint.
+
 const CATEGORY_GRADIENT: Record<string, [string, string]> = {
   Beef: ["#fde4e1", "#f3ada0"],
   Chicken: ["#fff3d6", "#ffd28f"],
@@ -21,11 +18,7 @@ export function categoryGradient(category: string): string {
   return `linear-gradient(135deg, ${from}, ${to})`;
 }
 
-// CATEGORY_ICONS (lib/db/queries/catalogue.ts) uses the live-animal emoji
-// for the category tile grid ("Shop by category" — 🐄 Beef, 🐔 Chicken),
-// which reads fine as a category label but wrong on an individual product
-// card, where it looks like a picture of a live animal rather than a meat
-// product. Product cards use this cut/food-appropriate set instead.
+
 const PRODUCT_ICON: Record<string, string> = {
   Beef: "🥩",
   Chicken: "🍗",
