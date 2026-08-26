@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { listAdminCustomers } from "@/lib/db/queries/adminCustomers";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
+import { AdminBadge, type AdminBadgeTone } from "@/components/admin/AdminBadge";
 import { CustomerStatusActions } from "@/components/admin/CustomerStatusActions";
-import { ExportLink } from "@/components/admin/ExportLink";
+import { AdminPageHeader, AdminHeaderSearch, AdminHeaderGhostLink } from "@/components/admin/AdminPageHeader";
+import { AdminToolbar, AdminChipLink, AdminToolbarSpacer, AdminCountBadge } from "@/components/admin/AdminToolbar";
 import type { AccountStatus } from "@/lib/db/models/User";
 
 const PAGE_SIZE = 25;
@@ -14,10 +16,10 @@ const TABS: { value: AccountStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
 ];
 
-const STATUS_BADGE: Record<AccountStatus, string> = {
-  pending_review: "bg-amber-100 text-amber-700",
-  approved: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
+const STATUS_TONE: Record<AccountStatus, AdminBadgeTone> = {
+  pending_review: "amber",
+  approved: "green",
+  rejected: "red",
 };
 
 const STATUS_LABEL: Record<AccountStatus, string> = {
@@ -72,122 +74,96 @@ export default async function AdminCustomersPage({
   if (sp.q) exportParams.set("q", sp.q);
 
   return (
-    <div className="p-6">
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-serif text-xl font-black text-neutral-900">Customers</h1>
-          <p className="text-[0.9rem] text-neutral-500">
-            Wholesale account applications — approve or reject sign-ups. Only approved accounts can
-            check out.
-          </p>
-        </div>
-        <ExportLink href={`/api/admin/export/customers?${exportParams.toString()}`} />
-      </div>
-
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
-        <div className="flex flex-wrap gap-1.5">
-          {TABS.map((tab) => (
-            <Link
-              key={tab.value}
-              href={tabHref(tab.value)}
-              className={`rounded-full px-3.5 py-1.5 text-[0.8rem] font-bold ${
-                status === tab.value
-                  ? "bg-neutral-900 text-white"
-                  : "bg-white text-neutral-600 hover:bg-neutral-100"
-              }`}
-            >
-              {tab.label}
-            </Link>
-          ))}
-        </div>
-
-        <form className="flex items-center gap-2" method="get">
+    <div className="flex h-full flex-col">
+      <AdminPageHeader title="Customers" subtitle="Wholesale account applications">
+        <AdminHeaderSearch action="/admin/customers" defaultValue={sp.q} placeholder="Search business, contact, or email…">
           <input type="hidden" name="status" value={status} />
-          <input
-            type="text"
-            name="q"
-            defaultValue={sp.q ?? ""}
-            placeholder="Search business, contact, or email…"
-            className="min-w-[240px] rounded-lg border border-neutral-300 bg-white px-3.5 py-2 text-[0.84rem] outline-none focus:border-red-500"
-          />
-          <button
-            type="submit"
-            className="rounded-lg bg-neutral-900 px-4 py-2 text-[0.9rem] font-bold text-white hover:bg-neutral-800"
-          >
-            Search
-          </button>
-        </form>
-      </div>
+        </AdminHeaderSearch>
+        <AdminHeaderGhostLink href={`/api/admin/export/customers?${exportParams.toString()}`}>
+          ⬇ Export
+        </AdminHeaderGhostLink>
+      </AdminPageHeader>
 
-      <AdminTableCard>
-        <table className="w-full text-left text-[0.9rem]">
-          <thead>
-            <tr className="border-b border-neutral-100 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
-              <th className="px-4 py-2.5">Business</th>
-              <th className="px-4 py-2.5">Contact</th>
-              <th className="px-4 py-2.5">City</th>
-              <th className="px-4 py-2.5">Type</th>
-              <th className="px-4 py-2.5">Est. volume</th>
-              <th className="px-4 py-2.5">Applied</th>
-              <th className="px-4 py-2.5">Status</th>
-              <th className="px-4 py-2.5"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {customers.map((c) => (
-              <tr key={c.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
-                <td className="px-4 py-2.5 font-semibold text-neutral-900">
-                  {c.businessName || "—"}
-                </td>
-                <td className="px-4 py-2.5 text-neutral-600">
-                  <div>{c.contactName || "—"}</div>
-                  <div className="text-[0.8rem] text-neutral-400">{c.email}</div>
-                  {c.phone && <div className="text-[0.8rem] text-neutral-400">{c.phone}</div>}
-                </td>
-                <td className="px-4 py-2.5 text-neutral-600">{c.city || "—"}</td>
-                <td className="px-4 py-2.5 text-neutral-600 capitalize">{c.businessType || "—"}</td>
-                <td className="px-4 py-2.5 text-neutral-600">
-                  {c.monthlyVolume ? MONTHLY_VOLUME_LABEL[c.monthlyVolume] ?? c.monthlyVolume : "—"}
-                </td>
-                <td className="px-4 py-2.5 text-neutral-500">
-                  {new Date(c.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-4 py-2.5">
-                  <span className={`rounded-full px-2 py-0.5 text-[0.78rem] font-bold ${STATUS_BADGE[c.status]}`}>
-                    {STATUS_LABEL[c.status]}
-                  </span>
-                </td>
-                <td className="px-4 py-2.5">
-                  <CustomerStatusActions customerId={c.id} businessName={c.businessName} status={c.status} />
-                </td>
-              </tr>
-            ))}
-            {customers.length === 0 && (
-              <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-neutral-400">
-                  No customers in this view.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </AdminTableCard>
-
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-center gap-1.5">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <Link
-              key={p}
-              href={pageHref(p)}
-              className={`rounded-lg px-3 py-1.5 text-[0.8rem] font-bold ${
-                p === page ? "bg-red-600 text-white" : "bg-white text-neutral-600 hover:bg-neutral-100"
-              }`}
-            >
-              {p}
-            </Link>
+      <div className="flex-1 overflow-y-auto p-5">
+        <AdminToolbar>
+          {TABS.map((tab) => (
+            <AdminChipLink key={tab.value} active={status === tab.value} href={tabHref(tab.value)}>
+              {tab.label}
+            </AdminChipLink>
           ))}
-        </div>
-      )}
+          <AdminToolbarSpacer />
+          <AdminCountBadge>{total} accounts</AdminCountBadge>
+        </AdminToolbar>
+
+        <AdminTableCard>
+          <table className="w-full text-left text-[14px]">
+            <thead>
+              <tr className="bg-[#f0ede9]">
+                {["Business", "Contact", "City", "Type", "Est. Volume", "Applied", "Status"].map((h) => (
+                  <th key={h} className="px-2.5 py-1.5 text-[13px] font-semibold tracking-wide text-[#5a5450] uppercase">
+                    {h}
+                  </th>
+                ))}
+                <th className="w-32 px-2.5 py-1.5" />
+              </tr>
+            </thead>
+            <tbody>
+              {customers.map((c, i) => (
+                <tr
+                  key={c.id}
+                  className={`border-b border-[#e4e1dc] last:border-0 hover:bg-[#fff5f4] ${
+                    i % 2 === 1 ? "bg-[#faf9f7]" : "bg-white"
+                  }`}
+                >
+                  <td className="px-2.5 py-1.5 font-semibold text-[#1a1816]">{c.businessName || "—"}</td>
+                  <td className="px-2.5 py-1.5 text-[#5a5450]">
+                    <div>{c.contactName || "—"}</div>
+                    <div className="text-[12px] text-[#9a9490]">{c.email}</div>
+                    {c.phone && <div className="text-[12px] text-[#9a9490]">{c.phone}</div>}
+                  </td>
+                  <td className="px-2.5 py-1.5 text-[#5a5450]">{c.city || "—"}</td>
+                  <td className="px-2.5 py-1.5 text-[#5a5450] capitalize">{c.businessType || "—"}</td>
+                  <td className="px-2.5 py-1.5 text-[#5a5450]">
+                    {c.monthlyVolume ? MONTHLY_VOLUME_LABEL[c.monthlyVolume] ?? c.monthlyVolume : "—"}
+                  </td>
+                  <td className="px-2.5 py-1.5 text-[#9a9490]">{new Date(c.createdAt).toLocaleDateString()}</td>
+                  <td className="px-2.5 py-1.5">
+                    <AdminBadge tone={STATUS_TONE[c.status]}>{STATUS_LABEL[c.status]}</AdminBadge>
+                  </td>
+                  <td className="px-2.5 py-1.5">
+                    <CustomerStatusActions customerId={c.id} businessName={c.businessName} status={c.status} />
+                  </td>
+                </tr>
+              ))}
+              {customers.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center text-[#9a9490]">
+                    No customers in this view.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </AdminTableCard>
+
+        {totalPages > 1 && (
+          <div className="mt-4 flex items-center justify-center gap-1.5">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <Link
+                key={p}
+                href={pageHref(p)}
+                className={`rounded-md px-3 py-1.5 text-[13px] font-bold ${
+                  p === page
+                    ? "bg-[#e05a4a] text-white"
+                    : "border border-[#e4e1dc] bg-white text-[#5a5450] hover:bg-[#f0ede9]"
+                }`}
+              >
+                {p}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -60,21 +60,19 @@ export function WeightAdjustmentTable({
   }
 
   return (
-    <table className="w-full text-left text-[0.9rem]">
+    <table className="w-full text-left text-[14px]">
       <thead>
-        <tr className="border-b border-neutral-100 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
-          <th className="px-4 py-2">Product</th>
-          <th className="px-4 py-2">SKU</th>
-          <th className="px-4 py-2">Ordered</th>
-          <th className="px-4 py-2">Unit Price</th>
-          <th className="px-4 py-2">Ordered Total</th>
-          <th className="px-4 py-2">Actual (kg)</th>
-          <th className="px-4 py-2">Adjustment</th>
-          <th className="px-4 py-2"></th>
+        <tr className="bg-[#f0ede9]">
+          {["Product", "SKU", "Ordered", "Unit Price", "Ordered Total", "Actual (kg)", "Adjustment"].map((h) => (
+            <th key={h} className="px-2.5 py-1.5 text-[13px] font-semibold tracking-wide text-[#5a5450] uppercase">
+              {h}
+            </th>
+          ))}
+          <th className="px-2.5 py-1.5" />
         </tr>
       </thead>
       <tbody>
-        {items.map((item) => {
+        {items.map((item, i) => {
           const actualQuantity = Number(actuals[item.id]);
           const adjustment =
             !Number.isNaN(actualQuantity) && item.unitPrice
@@ -82,39 +80,39 @@ export function WeightAdjustmentTable({
               : 0;
           const changed = actuals[item.id] !== String(item.quantity);
           return (
-            <tr key={item.id} className="border-b border-neutral-100 last:border-0">
-              <td className="px-4 py-2.5 font-semibold text-neutral-900">{item.productName}</td>
-              <td className="px-4 py-2.5 font-mono text-[0.84rem] text-neutral-500">
+            <tr
+              key={item.id}
+              className={`border-b border-[#e4e1dc] last:border-0 ${i % 2 === 1 ? "bg-[#faf9f7]" : "bg-white"}`}
+            >
+              <td className="px-2.5 py-1.5 font-semibold text-[#1a1816]">{item.productName}</td>
+              <td className="px-2.5 py-1.5 font-[family-name:var(--font-plex-mono)] text-[13px] text-[#9a9490]">
                 {item.sku || "—"}
               </td>
-              <td className="px-4 py-2.5 text-neutral-600">{item.quantity}</td>
-              <td className="px-4 py-2.5 text-neutral-600">${item.unitPrice.toFixed(2)}</td>
-              <td className="px-4 py-2.5 font-semibold text-neutral-900">
-                ${item.totalPrice.toFixed(2)}
-              </td>
-              <td className="px-4 py-2.5">
+              <td className="px-2.5 py-1.5 text-[#5a5450]">{item.quantity}</td>
+              <td className="px-2.5 py-1.5 text-[#5a5450]">${item.unitPrice.toFixed(2)}</td>
+              <td className="px-2.5 py-1.5 font-semibold text-[#1a1816]">${item.totalPrice.toFixed(2)}</td>
+              <td className="px-2.5 py-1.5">
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   value={actuals[item.id] ?? ""}
                   onChange={(e) => setActuals((a) => ({ ...a, [item.id]: e.target.value }))}
-                  className="w-20 rounded-md border border-neutral-300 px-2 py-1 text-[0.86rem] outline-none focus:border-red-500"
+                  className="w-20 rounded border border-[#d0ccc6] px-1.5 py-1 text-[14px] outline-none focus:border-[#e05a4a]"
                 />
               </td>
-              <td className="px-4 py-2.5">
+              <td className="px-2.5 py-1.5">
                 {changed && !Number.isNaN(actualQuantity) ? (
                   <span
-                    className={`font-bold ${adjustment > 0 ? "text-amber-600" : adjustment < 0 ? "text-green-600" : "text-neutral-400"}`}
+                    className={`font-bold ${adjustment > 0 ? "text-[#c48a00]" : adjustment < 0 ? "text-[#1e8a4a]" : "text-[#9a9490]"}`}
                   >
-                    {adjustment > 0 ? "+" : ""}
-                    ${adjustment.toFixed(2)}
+                    {adjustment > 0 ? "+" : ""}${adjustment.toFixed(2)}
                   </span>
                 ) : (
-                  <span className="text-neutral-300">—</span>
+                  <span className="text-[#c4c0bc]">—</span>
                 )}
               </td>
-              <td className="px-4 py-2.5 text-right">
+              <td className="px-2.5 py-1.5 text-right">
                 {changed && (
                   <div className="flex flex-col items-end gap-1.5">
                     <input
@@ -122,13 +120,13 @@ export function WeightAdjustmentTable({
                       placeholder="Note (optional)"
                       value={notes[item.id] ?? ""}
                       onChange={(e) => setNotes((n) => ({ ...n, [item.id]: e.target.value }))}
-                      className="w-36 rounded-md border border-neutral-300 px-2 py-1 text-[0.78rem] outline-none focus:border-red-500"
+                      className="w-36 rounded border border-[#d0ccc6] px-1.5 py-1 text-[13px] outline-none focus:border-[#e05a4a]"
                     />
                     <button
                       type="button"
                       onClick={() => handleSave(item)}
                       disabled={savingId === item.id}
-                      className="rounded-md bg-red-600 px-3 py-1 text-[0.78rem] font-bold text-white hover:bg-red-700 disabled:opacity-60"
+                      className="rounded-[5px] bg-[#e05a4a] px-2.5 py-1 text-[13px] font-bold text-white hover:bg-[#c04535] disabled:opacity-60"
                     >
                       {savingId === item.id ? "Saving…" : "Save & notify"}
                     </button>
@@ -140,7 +138,7 @@ export function WeightAdjustmentTable({
         })}
         {items.length === 0 && (
           <tr>
-            <td colSpan={8} className="px-4 py-6 text-center text-neutral-400">
+            <td colSpan={8} className="px-4 py-6 text-center text-[#9a9490]">
               No items.
             </td>
           </tr>

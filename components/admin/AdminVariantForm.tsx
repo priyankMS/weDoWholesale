@@ -14,8 +14,11 @@ import {
 } from "@/lib/validation/adminVariants";
 
 const inputClass =
-  "w-full rounded-lg border border-neutral-300 bg-white px-3.5 py-2 text-[0.86rem] outline-none focus:border-red-500";
-const labelClass = "mb-1.5 block text-[0.8rem] font-bold text-neutral-500";
+  "w-full rounded-md border border-[#d0ccc6] bg-white px-2.5 py-1.5 text-[14px] text-[#1a1816] outline-none focus:border-[#e05a4a]";
+const labelClass = "mb-1 block text-[13px] font-semibold tracking-wide text-[#9a9490] uppercase";
+const sectionTitleClass =
+  "mb-2.5 border-b border-[#e4e1dc] pb-1.5 text-[13px] font-bold tracking-widest text-[#9a9490] uppercase";
+const cardClass = "rounded-md border border-[#e4e1dc] bg-white p-5";
 
 export function AdminVariantForm({
   variantId,
@@ -52,8 +55,8 @@ export function AdminVariantForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
-      <div className="rounded-xl border border-neutral-200 bg-white p-5">
-        <h2 className="mb-4 text-[0.9rem] font-extrabold text-neutral-900">Variant Attributes</h2>
+      <div className={cardClass}>
+        <h2 className={sectionTitleClass}>Variant Attributes</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className={labelClass}>SKU</label>
@@ -78,16 +81,14 @@ export function AdminVariantForm({
         </div>
       </div>
 
-      <div className="rounded-xl border border-neutral-200 bg-white p-5">
-        <h2 className="mb-4 text-[0.9rem] font-extrabold text-neutral-900">Stock &amp; Price</h2>
+      <div className={cardClass}>
+        <h2 className={sectionTitleClass}>Stock &amp; Price</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className={labelClass}>Base Price ($)</label>
             <input type="number" step="0.01" min="0" {...register("basePrice")} className={inputClass} />
             {errors.basePrice && (
-              <p className="mt-1 text-[0.8rem] font-semibold text-red-600">
-                {errors.basePrice.message}
-              </p>
+              <p className="mt-1 text-[13px] font-semibold text-[#cc2222]">{errors.basePrice.message}</p>
             )}
           </div>
           <div>
@@ -101,14 +102,14 @@ export function AdminVariantForm({
         <button
           type="button"
           onClick={() => router.push("/admin/variants")}
-          className="rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-[0.84rem] font-bold text-neutral-700 hover:bg-neutral-50"
+          className="rounded-[5px] border border-[#d0ccc6] bg-white px-4 py-1.5 text-[14px] font-semibold text-[#5a5450] hover:bg-[#f0ede9]"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isMutating}
-          className="rounded-lg bg-red-600 px-5 py-2.5 text-[0.84rem] font-bold text-white hover:bg-red-700 disabled:opacity-60"
+          className="rounded-[5px] bg-[#e05a4a] px-5 py-1.5 text-[14px] font-bold text-white hover:bg-[#c04535] disabled:opacity-60"
         >
           {isMutating ? "Saving…" : "💾 Save Changes"}
         </button>

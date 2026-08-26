@@ -10,12 +10,12 @@ import type { OrderStatus } from "@/lib/db/models/Order";
 const STATUSES: OrderStatus[] = ["pending", "new", "shipped", "delivered", "cancelled", "returned"];
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
-  pending: "bg-neutral-100 text-neutral-600",
-  new: "bg-blue-100 text-blue-700",
-  shipped: "bg-amber-100 text-amber-700",
-  delivered: "bg-green-100 text-green-700",
-  cancelled: "bg-red-100 text-red-700",
-  returned: "bg-purple-100 text-purple-700",
+  pending: "bg-[#f0ede9] text-[#8a8480]",
+  new: "bg-[#e8eef8] text-[#1a6fcc]",
+  shipped: "bg-[#fff8e0] text-[#c48a00]",
+  delivered: "bg-[#e8f7ef] text-[#1e8a4a]",
+  cancelled: "bg-[#fde8e8] text-[#cc2222]",
+  returned: "bg-[#fdf2f1] text-[#e05a4a]",
 };
 
 export function OrderStatusSelect({ orderId, status }: { orderId: number; status: OrderStatus | null }) {
@@ -44,7 +44,7 @@ export function OrderStatusSelect({ orderId, status }: { orderId: number; status
       value={current}
       disabled={saving}
       onChange={(e) => handleChange(e.target.value as OrderStatus)}
-      className={`cursor-pointer rounded-full border-none px-2.5 py-1 text-[0.8rem] font-bold outline-none disabled:opacity-60 ${STATUS_STYLES[current]}`}
+      className={`cursor-pointer rounded-[3px] border-none px-2 py-1 text-[13px] font-bold outline-none disabled:opacity-60 ${STATUS_STYLES[current]}`}
     >
       {STATUSES.map((s) => (
         <option key={s} value={s}>

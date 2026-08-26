@@ -10,8 +10,8 @@ import { getApiErrorMessage } from "@/lib/api/error";
 import { adminSupplierSchema, type AdminSupplierInput } from "@/lib/validation/adminSuppliers";
 
 const inputClass =
-  "w-full rounded-lg border border-neutral-300 bg-white px-3.5 py-2 text-[0.86rem] outline-none focus:border-red-500";
-const labelClass = "mb-1.5 block text-[0.8rem] font-bold text-neutral-500";
+  "w-full rounded-md border border-[#d0ccc6] bg-white px-2.5 py-1.5 text-[14px] text-[#1a1816] outline-none focus:border-[#e05a4a]";
+const labelClass = "mb-1 block text-[13px] font-semibold tracking-wide text-[#9a9490] uppercase";
 
 type SupplierData = AdminSupplierInput & { id?: number };
 
@@ -67,16 +67,18 @@ export function SupplierModal({
       <span onClick={() => setOpen(true)}>{trigger}</span>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
-            <h3 className="mb-4 text-[0.9rem] font-extrabold text-neutral-900">
-              {supplier?.id ? "Edit Supplier" : "Add Supplier"}
-            </h3>
-            <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-3.5">
+          <div className="w-full max-w-md overflow-hidden rounded-md bg-white shadow-xl">
+            <div className="bg-[#141312] px-5 py-3">
+              <h3 className="font-[family-name:var(--font-plex-mono)] text-[15px] font-semibold text-white">
+                {supplier?.id ? "Edit Supplier" : "Add Supplier"}
+              </h3>
+            </div>
+            <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-3.5 p-5">
               <div>
                 <label className={labelClass}>Supplier Name</label>
                 <input {...register("name")} className={inputClass} />
                 {errors.name && (
-                  <p className="mt-1 text-[0.8rem] font-semibold text-red-600">{errors.name.message}</p>
+                  <p className="mt-1 text-[13px] font-semibold text-[#cc2222]">{errors.name.message}</p>
                 )}
               </div>
               <div>
@@ -103,8 +105,8 @@ export function SupplierModal({
                   <input {...register("halalCertStatus")} className={inputClass} />
                 </div>
               </div>
-              <label className="flex items-center gap-1.5 text-[0.9rem] text-neutral-600">
-                <input type="checkbox" {...register("isActive")} className="h-3.5 w-3.5" />
+              <label className="flex items-center gap-1.5 text-[14px] text-[#5a5450]">
+                <input type="checkbox" {...register("isActive")} className="h-3.5 w-3.5 accent-[#e05a4a]" />
                 Active
               </label>
 
@@ -112,16 +114,16 @@ export function SupplierModal({
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-[0.9rem] font-bold text-neutral-700 hover:bg-neutral-50"
+                  className="rounded-[5px] border border-[#d0ccc6] bg-white px-3.5 py-1.5 text-[14px] font-semibold text-[#5a5450] hover:bg-[#f0ede9]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-red-600 px-4 py-2 text-[0.9rem] font-bold text-white hover:bg-red-700 disabled:opacity-60"
+                  className="rounded-[5px] bg-[#e05a4a] px-4 py-1.5 text-[14px] font-bold text-white hover:bg-[#c04535] disabled:opacity-60"
                 >
-                  {saving ? "Saving…" : "Save"}
+                  {saving ? "Saving…" : "💾 Save"}
                 </button>
               </div>
             </form>

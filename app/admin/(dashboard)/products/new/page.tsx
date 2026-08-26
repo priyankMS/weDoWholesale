@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { WdhSupplier } from "@/lib/db/models/WdhSupplier";
 import { AdminProductCreateForm } from "@/components/admin/AdminProductCreateForm";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import {
   getAdminProductCategories,
   getAdminProductTypesByCategory,
@@ -18,22 +19,20 @@ export default async function AdminProductNewPage() {
   ]);
 
   return (
-    <div className="p-6">
-      <div className="mb-5">
-        <Link href="/admin/products" className="text-[0.8rem] font-bold text-red-600">
+    <div className="flex h-full flex-col">
+      <AdminPageHeader title="New Product" subtitle="Create a product with its first variant and pricing" />
+
+      <div className="flex-1 overflow-y-auto p-5">
+        <Link href="/admin/products" className="mb-4 inline-block text-[13px] font-bold text-[#e05a4a]">
           ← Back to Products
         </Link>
-        <h1 className="mt-2 font-serif text-xl font-black text-neutral-900">New Product</h1>
-        <p className="text-[0.9rem] text-neutral-500">
-          Create a product with its first variant and pricing.
-        </p>
-      </div>
 
-      <AdminProductCreateForm
-        suppliers={suppliers.map((s) => ({ id: s.id, name: s.name }))}
-        categories={categories}
-        typesByCategory={typesByCategory}
-      />
+        <AdminProductCreateForm
+          suppliers={suppliers.map((s) => ({ id: s.id, name: s.name }))}
+          categories={categories}
+          typesByCategory={typesByCategory}
+        />
+      </div>
     </div>
   );
 }

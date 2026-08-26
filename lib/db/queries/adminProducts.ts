@@ -5,6 +5,7 @@ import { WdhVariant } from "@/lib/db/models/WdhVariant";
 import { WdhVariantPricing } from "@/lib/db/models/WdhVariantPricing";
 import { WdhSupplier } from "@/lib/db/models/WdhSupplier";
 import { stockStateFor, type StockState } from "@/lib/db/queries/catalogue";
+import { variantLabel } from "@/lib/format";
 import type { AdminProductCreateInput } from "@/lib/validation/adminProducts";
 
 export type AdminProductRow = {
@@ -14,15 +15,21 @@ export type AdminProductRow = {
   category: string;
   type: string | null;
   variantCount: number;
+  variantLabels: string[];
   supplierNames: string[];
   stockState: StockState;
   seoComplete: boolean;
   retailPrice: number | null;
+  salePercent: number | null;
 };
 
 export type AdminProductListParams = {
   search?: string;
   category?: string;
+  supplierId?: number;
+  stock?: StockState;
+  onSale?: boolean;
+  seoMissing?: boolean;
   page?: number;
   pageSize?: number;
 };
@@ -45,7 +52,7 @@ const productInclude = [
 export async function listAdminProducts(
   params: AdminProductListParams,
 ): Promise<AdminProductListResult> {
-  const { search, category, page = 1, pageSize = 20 } = params;
+  const { search, category, supplierId, stock, onSale, seoMissing, page = 1, pageSize = 20 } = params;
 
   const where: Record<string | symbol, unknown> = {};
   const trimmed = search?.trim();
@@ -57,24 +64,48 @@ export async function listAdminProducts(
   }
   if (category && category !== "All") where.category = category;
 
-  const { rows, count } = await WdhProduct.findAndCountAll({
+  // Filtering by supplier needs a separate lookup: joining WdhVariantPricing
+  // directly onto the main query (with `required: true`) would also prune
+  // the *other* variants/pricing rows Sequelize eager-loads per product,
+  // corrupting the supplierNames/price aggregation below. So narrow to
+  // matching product IDs first, then run the full aggregation query as before.
+  if (supplierId) {
+    const matches = await WdhVariantPricing.findAll({
+      attributes: ["variantId"],
+      where: { supplierId },
+      include: [{ model: WdhVariant, attributes: ["productId"], required: true }],
+    });
+    const productIds = Array.from(
+      new Set(matches.map((m) => (m as WdhVariantPricing & { WdhVariant?: WdhVariant }).WdhVariant!.productId)),
+    );
+    where.id = { [Op.in]: productIds.length ? productIds : [-1] };
+  }
+
+  // Sale/stock are computed by aggregating across a product's variants, so
+  // they can't be pushed into SQL alongside the above — fetch every matching
+  // product (unpaginated), filter in memory, then paginate the result.
+  const rows = await WdhProduct.findAll({
     where,
     include: productInclude,
     order: [["item", "ASC"]],
-    limit: pageSize,
-    offset: (page - 1) * pageSize,
-    distinct: true,
   });
 
-  const products: AdminProductRow[] = rows.map((product) => {
+  let products: AdminProductRow[] = rows.map((product) => {
     const variants = product.variants ?? [];
     const supplierNames = new Set<string>();
     const prices: number[] = [];
     const stockStates: StockState[] = [];
+    let salePercent: number | null = null;
 
     for (const v of variants) {
       stockStates.push(stockStateFor(v.stockCount ?? null));
       if (v.basePrice != null) prices.push(Number(v.basePrice));
+      const base = v.basePrice != null ? Number(v.basePrice) : null;
+      const discount = v.discountPrice != null ? Number(v.discountPrice) : null;
+      if (base != null && base > 0 && discount != null && discount < base) {
+        const pct = Math.round((1 - discount / base) * 100);
+        if (salePercent == null || pct > salePercent) salePercent = pct;
+      }
       for (const p of v.pricing ?? []) {
         const pricingWithSupplier = p as WdhVariantPricing & { WdhSupplier?: WdhSupplier };
         if (pricingWithSupplier.WdhSupplier) supplierNames.add(pricingWithSupplier.WdhSupplier.name);
@@ -96,14 +127,24 @@ export async function listAdminProducts(
       category: product.category ?? "",
       type: product.type,
       variantCount: variants.length,
+      variantLabels: variants.map((v) => variantLabel(v)),
       supplierNames: Array.from(supplierNames),
       stockState: overallStock,
       seoComplete: !!(product.metaTitle?.trim() && product.metaDesc?.trim()),
       retailPrice: prices.length ? Math.min(...prices) : null,
+      salePercent,
     };
   });
 
-  return { products, total: count, page, pageSize };
+  if (stock) products = products.filter((p) => p.stockState === stock);
+  if (onSale) products = products.filter((p) => p.salePercent != null);
+  if (seoMissing) products = products.filter((p) => !p.seoComplete);
+
+  const total = products.length;
+  const start = (page - 1) * pageSize;
+  const paged = products.slice(start, start + pageSize);
+
+  return { products: paged, total, page, pageSize };
 }
 
 // Creates a product together with its first variant (and, if pricing was

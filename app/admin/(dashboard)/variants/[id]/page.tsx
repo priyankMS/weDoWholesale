@@ -4,6 +4,7 @@ import { WdhVariant } from "@/lib/db/models/WdhVariant";
 import { WdhProduct } from "@/lib/db/models/WdhProduct";
 import { variantLabel } from "@/lib/format";
 import { AdminVariantForm } from "@/components/admin/AdminVariantForm";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 export default async function AdminVariantEditPage({
   params,
@@ -19,29 +20,30 @@ export default async function AdminVariantEditPage({
   const product = (variant as WdhVariant & { WdhProduct?: WdhProduct }).WdhProduct;
 
   return (
-    <div className="p-6">
-      <div className="mb-5">
-        <Link href="/admin/variants" className="text-[0.8rem] font-bold text-red-600">
+    <div className="flex h-full flex-col">
+      <AdminPageHeader
+        title={`${product?.item ?? "Variant"} — ${variantLabel(variant)}`}
+        subtitle={`SKU: ${variant.sku || "—"}`}
+      />
+
+      <div className="flex-1 overflow-y-auto p-5">
+        <Link href="/admin/variants" className="mb-4 inline-block text-[13px] font-bold text-[#e05a4a]">
           ← Back to Variants
         </Link>
-        <h1 className="mt-2 font-serif text-xl font-black text-neutral-900">
-          {product?.item ?? "Variant"} — {variantLabel(variant)}
-        </h1>
-        <p className="text-[0.9rem] text-neutral-500">SKU: {variant.sku || "—"}</p>
-      </div>
 
-      <AdminVariantForm
-        variantId={variant.id}
-        defaultValues={{
-          sku: variant.sku,
-          conditionType: variant.conditionType,
-          cutType: variant.cutType,
-          boneType: variant.boneType,
-          skinType: variant.skinType,
-          basePrice: variant.basePrice != null ? Number(variant.basePrice) : null,
-          stockCount: variant.stockCount,
-        }}
-      />
+        <AdminVariantForm
+          variantId={variant.id}
+          defaultValues={{
+            sku: variant.sku,
+            conditionType: variant.conditionType,
+            cutType: variant.cutType,
+            boneType: variant.boneType,
+            skinType: variant.skinType,
+            basePrice: variant.basePrice != null ? Number(variant.basePrice) : null,
+            stockCount: variant.stockCount,
+          }}
+        />
+      </div>
     </div>
   );
 }

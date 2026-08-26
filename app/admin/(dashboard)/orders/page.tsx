@@ -2,7 +2,9 @@ import Link from "next/link";
 import { listAdminOrders } from "@/lib/db/queries/adminOrders";
 import { OrderStatusSelect } from "@/components/admin/OrderStatusSelect";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
-import { ExportLink } from "@/components/admin/ExportLink";
+import { AdminBadge, type AdminBadgeTone } from "@/components/admin/AdminBadge";
+import { AdminPageHeader, AdminHeaderGhostLink } from "@/components/admin/AdminPageHeader";
+import { AdminToolbar, AdminChipLink, AdminToolbarSpacer, AdminCountBadge } from "@/components/admin/AdminToolbar";
 import type { OrderStatus } from "@/lib/db/models/Order";
 
 const PAGE_SIZE = 20;
@@ -17,10 +19,10 @@ function formatDate(d: Date): string {
   });
 }
 
-const PAYMENT_STATUS_STYLE: Record<string, string> = {
-  Completed: "bg-green-50 text-green-700",
-  Pending: "bg-amber-50 text-amber-700",
-  Failed: "bg-red-50 text-red-700",
+const PAYMENT_STATUS_TONE: Record<string, AdminBadgeTone> = {
+  Completed: "green",
+  Pending: "amber",
+  Failed: "red",
 };
 
 export default async function AdminOrdersPage({
@@ -50,120 +52,103 @@ export default async function AdminOrdersPage({
   const exportHref = `/api/admin/export/orders${sp.status ? `?status=${sp.status}` : ""}`;
 
   return (
-    <div className="p-6">
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-serif text-xl font-black text-neutral-900">Orders</h1>
-          <p className="text-[0.9rem] text-neutral-500">{total} orders</p>
-        </div>
-        <ExportLink href={exportHref} />
-      </div>
+    <div className="flex h-full flex-col">
+      <AdminPageHeader title="Orders" subtitle={`${total} orders`}>
+        <AdminHeaderGhostLink href={exportHref}>⬇ Export</AdminHeaderGhostLink>
+      </AdminPageHeader>
 
-      <div className="mb-4 flex flex-wrap gap-1.5">
-        <Link
-          href={statusHref(undefined)}
-          className={`rounded-lg px-3 py-1.5 text-[0.86rem] font-bold ${
-            !sp.status ? "bg-red-600 text-white" : "bg-white text-neutral-600 hover:bg-neutral-100"
-          }`}
-        >
-          All
-        </Link>
-        {STATUSES.map((s) => (
-          <Link
-            key={s}
-            href={statusHref(s)}
-            className={`rounded-lg px-3 py-1.5 text-[0.86rem] font-bold capitalize ${
-              sp.status === s ? "bg-red-600 text-white" : "bg-white text-neutral-600 hover:bg-neutral-100"
-            }`}
-          >
-            {s}
-          </Link>
-        ))}
-      </div>
-
-      <AdminTableCard>
-        <table className="w-full text-left text-[0.9rem]">
-          <thead>
-            <tr className="border-b border-neutral-100 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
-              <th className="px-4 py-2.5">Order ID</th>
-              <th className="px-4 py-2.5">Customer</th>
-              <th className="px-4 py-2.5">Items</th>
-              <th className="px-4 py-2.5">Total</th>
-              <th className="px-4 py-2.5">Status</th>
-              <th className="px-4 py-2.5">Payment</th>
-              <th className="px-4 py-2.5">Placed</th>
-              <th className="px-4 py-2.5">Delivery Date</th>
-              <th className="px-4 py-2.5"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((o) => (
-              <tr key={o.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
-                <td className="px-4 py-2.5 font-mono text-[0.86rem] font-semibold text-neutral-900">
-                  #{o.orderNumber}
-                </td>
-                <td className="px-4 py-2.5 text-neutral-700">{o.customerName}</td>
-                <td className="px-4 py-2.5 text-neutral-600">{o.itemCount}</td>
-                <td className="px-4 py-2.5 font-semibold text-neutral-900">
-                  ${o.finalAmount.toFixed(2)}
-                </td>
-                <td className="px-4 py-2.5">
-                  <OrderStatusSelect orderId={o.id} status={o.orderStatus} />
-                </td>
-                <td className="px-4 py-2.5">
-                  <div className="text-neutral-700">
-                    {o.paymentMethod === "Online" ? "Online" : "COD"}
-                  </div>
-                  <div className="mt-0.5 flex items-center gap-1.5">
-                    <span
-                      className={`rounded-full px-1.5 py-0.25 text-[0.74rem] font-bold ${
-                        PAYMENT_STATUS_STYLE[o.paymentStatus] ?? "bg-neutral-100 text-neutral-600"
-                      }`}
-                    >
-                      {o.paymentStatus}
-                    </span>
-                  </div>
-                  {o.paidAt && (
-                    <div className="mt-0.5 text-[0.8rem] text-neutral-400">
-                      {formatDate(o.paidAt)}
-                    </div>
-                  )}
-                </td>
-                <td className="px-4 py-2.5 text-neutral-500">{formatDate(o.createdAt)}</td>
-                <td className="px-4 py-2.5 text-neutral-500">{o.deliveryDate || "—"}</td>
-                <td className="px-4 py-2.5 text-right">
-                  <Link href={`/admin/orders/${o.id}`} className="font-bold text-red-600 hover:underline">
-                    View
-                  </Link>
-                </td>
-              </tr>
-            ))}
-            {orders.length === 0 && (
-              <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-neutral-400">
-                  No orders found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </AdminTableCard>
-
-      {totalPages > 1 && (
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <Link
-              key={p}
-              href={pageHref(p)}
-              className={`rounded-lg px-3 py-1.5 text-[0.8rem] font-bold ${
-                p === page ? "bg-red-600 text-white" : "bg-white text-neutral-600 hover:bg-neutral-100"
-              }`}
-            >
-              {p}
-            </Link>
+      <div className="flex-1 overflow-y-auto p-5">
+        <AdminToolbar>
+          <AdminChipLink active={!sp.status} href={statusHref(undefined)}>
+            All
+          </AdminChipLink>
+          {STATUSES.map((s) => (
+            <AdminChipLink key={s} active={sp.status === s} href={statusHref(s)}>
+              {s.charAt(0).toUpperCase() + s.slice(1)}
+            </AdminChipLink>
           ))}
-        </div>
-      )}
+          <AdminToolbarSpacer />
+          <AdminCountBadge>{total} active orders</AdminCountBadge>
+        </AdminToolbar>
+
+        <AdminTableCard>
+          <table className="w-full text-left text-[14px]">
+            <thead>
+              <tr className="bg-[#f0ede9]">
+                {["Order ID", "Customer", "Items", "Total", "Status", "Payment", "Placed", "Delivery Date"].map((h) => (
+                  <th key={h} className="px-2.5 py-1.5 text-[13px] font-semibold tracking-wide text-[#5a5450] uppercase">
+                    {h}
+                  </th>
+                ))}
+                <th className="w-16 px-2.5 py-1.5" />
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((o, i) => (
+                <tr
+                  key={o.id}
+                  className={`border-b border-[#e4e1dc] last:border-0 hover:bg-[#fff5f4] ${
+                    i % 2 === 1 ? "bg-[#faf9f7]" : "bg-white"
+                  }`}
+                >
+                  <td className="px-2.5 py-1.5 font-[family-name:var(--font-plex-mono)] text-[14px] font-semibold text-[#1a1816]">
+                    #{o.orderNumber}
+                  </td>
+                  <td className="px-2.5 py-1.5 text-[#5a5450]">{o.customerName}</td>
+                  <td className="px-2.5 py-1.5 text-[#5a5450]">{o.itemCount}</td>
+                  <td className="px-2.5 py-1.5 font-[family-name:var(--font-plex-mono)] font-bold text-[#c04535]">
+                    ${o.finalAmount.toFixed(2)}
+                  </td>
+                  <td className="px-2.5 py-1.5">
+                    <OrderStatusSelect orderId={o.id} status={o.orderStatus} />
+                  </td>
+                  <td className="px-2.5 py-1.5">
+                    <div className="text-[#5a5450]">{o.paymentMethod === "Online" ? "Online" : "COD"}</div>
+                    <div className="mt-0.5 flex items-center gap-1.5">
+                      <AdminBadge tone={PAYMENT_STATUS_TONE[o.paymentStatus] ?? "neutral"}>
+                        {o.paymentStatus}
+                      </AdminBadge>
+                    </div>
+                    {o.paidAt && <div className="mt-0.5 text-[12px] text-[#c4c0bc]">{formatDate(o.paidAt)}</div>}
+                  </td>
+                  <td className="px-2.5 py-1.5 text-[#9a9490]">{formatDate(o.createdAt)}</td>
+                  <td className="px-2.5 py-1.5 text-[#9a9490]">{o.deliveryDate || "—"}</td>
+                  <td className="px-2.5 py-1.5 text-right">
+                    <Link href={`/admin/orders/${o.id}`} className="rounded p-1 text-[15px] hover:bg-[#fdf2f1]" aria-label="View">
+                      👁
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+              {orders.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-8 text-center text-[#9a9490]">
+                    No orders found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </AdminTableCard>
+
+        {totalPages > 1 && (
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <Link
+                key={p}
+                href={pageHref(p)}
+                className={`rounded-md px-3 py-1.5 text-[13px] font-bold ${
+                  p === page
+                    ? "bg-[#e05a4a] text-white"
+                    : "border border-[#e4e1dc] bg-white text-[#5a5450] hover:bg-[#f0ede9]"
+                }`}
+              >
+                {p}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import { getSupplierCompareData } from "@/lib/db/queries/adminSupplierCompare";
 import { getAdminProductCategories } from "@/lib/db/queries/adminProducts";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
-import { ExportLink } from "@/components/admin/ExportLink";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminToolbar, AdminFilterSelect, AdminChipLink, AdminToolbarSpacer, AdminCountBadge } from "@/components/admin/AdminToolbar";
 
 export default async function AdminSupplierComparePage({
   searchParams,
@@ -17,105 +18,115 @@ export default async function AdminSupplierComparePage({
 
   const filteredRows = sp.conflicts === "1" ? rows.filter((r) => r.hasConflict) : rows;
 
-  const exportParams = new URLSearchParams();
-  if (sp.category) exportParams.set("category", sp.category);
-  if (sp.conflicts) exportParams.set("conflicts", sp.conflicts);
+  function toggleConflictsHref() {
+    const params = new URLSearchParams();
+    if (sp.category) params.set("category", sp.category);
+    if (sp.conflicts !== "1") params.set("conflicts", "1");
+    return `/admin/supplier-compare?${params.toString()}`;
+  }
 
   return (
-    <div className="p-6">
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-serif text-xl font-black text-neutral-900">Supplier Compare</h1>
-          <p className="text-[0.9rem] text-neutral-500">
-            Comparing {suppliers.length} suppliers · {sharedCount} shared products
-          </p>
-        </div>
-        <ExportLink href={`/api/admin/export/supplier-compare?${exportParams.toString()}`} />
-      </div>
+    <div className="flex h-full flex-col">
+      <AdminPageHeader title="Supplier Price Comparison" />
 
-      <form className="mb-4 flex flex-wrap items-center gap-2.5" method="get">
-        <select
-          name="category"
-          defaultValue={sp.category ?? "All"}
-          className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-[0.84rem] outline-none focus:border-red-500"
-        >
-          <option value="All">All Categories</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <label className="flex items-center gap-1.5 text-[0.9rem] text-neutral-600">
-          <input
-            type="checkbox"
-            name="conflicts"
-            value="1"
-            defaultChecked={sp.conflicts === "1"}
-            className="h-3.5 w-3.5"
-          />
-          Price conflicts only
-        </label>
-        <button
-          type="submit"
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-[0.9rem] font-bold text-white hover:bg-neutral-800"
-        >
-          Filter
-        </button>
-      </form>
-
-      <AdminTableCard>
-        <table className="w-full text-left text-[0.9rem]">
-          <thead>
-            <tr className="border-b border-neutral-100 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
-              <th className="px-4 py-2.5">Product / Variant</th>
-              {suppliers.map((s) => (
-                <th key={s.id} className="px-4 py-2.5">
-                  {s.name}
-                </th>
+      <div className="flex-1 overflow-y-auto p-5">
+        <form method="get" action="/admin/supplier-compare">
+          <AdminToolbar>
+            <AdminFilterSelect name="category" defaultValue={sp.category ?? "All"}>
+              <option value="All">All Categories</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRows.map((row) => (
-              <tr
-                key={row.variantId}
-                className={`border-b border-neutral-100 last:border-0 ${row.hasConflict ? "bg-amber-50/60" : "hover:bg-neutral-50"}`}
-              >
-                <td className="px-4 py-2.5">
-                  <div className="font-semibold text-neutral-900">{row.productName}</div>
-                  <div className="text-[0.82rem] text-neutral-400">{row.variantLabel}</div>
-                </td>
-                {suppliers.map((s) => {
-                  const price = row.prices.get(s.id);
-                  const isCheapest = row.cheapestSupplierId === s.id;
-                  return (
-                    <td key={s.id} className="px-4 py-2.5">
-                      {price != null ? (
-                        <span
-                          className={`font-semibold ${isCheapest ? "text-green-700" : "text-neutral-700"}`}
-                        >
-                          ${price.toFixed(2)}
-                          {isCheapest && <span className="ml-1 text-[0.78rem]">✓ Cheapest</span>}
-                        </span>
-                      ) : (
-                        <span className="text-neutral-300">—</span>
-                      )}
-                    </td>
-                  );
-                })}
+            </AdminFilterSelect>
+            <button
+              type="submit"
+              className="rounded-md bg-[#1a1816] px-3 py-1.5 text-[14px] font-semibold text-white hover:bg-[#3a3632]"
+            >
+              Filter
+            </button>
+            <AdminChipLink active={sp.conflicts === "1"} href={toggleConflictsHref()}>
+              Price Conflicts Only
+            </AdminChipLink>
+            <AdminToolbarSpacer />
+            <AdminCountBadge>
+              Comparing {suppliers.length} suppliers · {sharedCount} shared products
+            </AdminCountBadge>
+          </AdminToolbar>
+        </form>
+
+        <AdminTableCard>
+          <table className="w-full text-left text-[14px]">
+            <thead>
+              <tr className="bg-[#f0ede9]">
+                <th className="min-w-[200px] px-2.5 py-1.5 text-[13px] font-semibold tracking-wide text-[#5a5450] uppercase">
+                  Product / Variant
+                </th>
+                {suppliers.map((s) => (
+                  <th
+                    key={s.id}
+                    className="min-w-[150px] px-2.5 py-1.5 text-[13px] font-semibold tracking-wide text-[#5a5450] uppercase"
+                  >
+                    {s.name}
+                  </th>
+                ))}
               </tr>
-            ))}
-            {filteredRows.length === 0 && (
-              <tr>
-                <td colSpan={suppliers.length + 1} className="px-4 py-8 text-center text-neutral-400">
-                  No shared products found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </AdminTableCard>
+            </thead>
+            <tbody>
+              {filteredRows.map((row, i) => (
+                <tr
+                  key={row.variantId}
+                  className={`border-b border-[#e4e1dc] last:border-0 ${
+                    row.hasConflict ? "bg-[#fff8e0]" : i % 2 === 1 ? "bg-[#faf9f7]" : "bg-white hover:bg-[#fff5f4]"
+                  }`}
+                >
+                  <td className="bg-[#faf9f7] px-2.5 py-1.5">
+                    <div className="font-semibold text-[#1a1816]">{row.productName}</div>
+                    <div className="text-[12px] text-[#9a9490]">{row.variantLabel}</div>
+                  </td>
+                  {suppliers.map((s) => {
+                    const price = row.prices.get(s.id);
+                    const isCheapest = row.cheapestSupplierId === s.id;
+                    const isPriced = price != null;
+                    const isHighest =
+                      isPriced &&
+                      !isCheapest &&
+                      Array.from(row.prices.values()).some((p) => p != null && p < (price as number));
+                    return (
+                      <td
+                        key={s.id}
+                        className={`px-2.5 py-1.5 ${
+                          isCheapest ? "bg-[#e8f7ef]" : isHighest ? "bg-[#fde8e8]" : ""
+                        }`}
+                      >
+                        {price != null ? (
+                          <span>
+                            <span className="font-[family-name:var(--font-plex-mono)] font-bold text-[#1a1816]">
+                              ${price.toFixed(2)}
+                            </span>
+                            {isCheapest && <span className="ml-1.5 text-[12px] font-bold text-[#1e8a4a]">● Best</span>}
+                            {isHighest && <span className="ml-1.5 text-[12px] font-bold text-[#cc2222]">▲ High</span>}
+                          </span>
+                        ) : (
+                          <span className="text-[13px] text-[#c4c0bc]">Not offered</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+              {filteredRows.length === 0 && (
+                <tr>
+                  <td colSpan={suppliers.length + 1} className="px-4 py-8 text-center text-[#9a9490]">
+                    No shared products found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </AdminTableCard>
+      </div>
     </div>
   );
 }

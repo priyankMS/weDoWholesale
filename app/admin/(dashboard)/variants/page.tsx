@@ -2,8 +2,10 @@ import Link from "next/link";
 import { listAdminVariants, getVariantFacets } from "@/lib/db/queries/adminVariants";
 import { getAdminProductCategories } from "@/lib/db/queries/adminProducts";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
+import { AdminBadge } from "@/components/admin/AdminBadge";
 import { StockBadge } from "@/components/admin/StockBadge";
-import { ExportLink } from "@/components/admin/ExportLink";
+import { AdminPageHeader, AdminHeaderSearch, AdminHeaderGhostLink } from "@/components/admin/AdminPageHeader";
+import { AdminToolbar, AdminFilterSelect, AdminToolbarSpacer, AdminCountBadge } from "@/components/admin/AdminToolbar";
 
 const PAGE_SIZE = 25;
 
@@ -47,140 +49,159 @@ export default async function AdminVariantsPage({
   if (sp.bone) exportParams.set("bone", sp.bone);
 
   return (
-    <div className="p-6">
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-serif text-xl font-black text-neutral-900">Variants &amp; SKUs</h1>
-          <p className="text-[0.9rem] text-neutral-500">{total} variants across all products</p>
-        </div>
-        <ExportLink href={`/api/admin/export/variants?${exportParams.toString()}`} />
-      </div>
+    <div className="flex h-full flex-col">
+      <AdminPageHeader title="Variants & SKUs">
+        <AdminHeaderSearch action="/admin/variants" defaultValue={sp.q} placeholder="Search by SKU or title…">
+          {sp.category && <input type="hidden" name="category" value={sp.category} />}
+          {sp.condition && <input type="hidden" name="condition" value={sp.condition} />}
+          {sp.bone && <input type="hidden" name="bone" value={sp.bone} />}
+        </AdminHeaderSearch>
+        <AdminHeaderGhostLink href={`/api/admin/export/variants?${exportParams.toString()}`}>
+          ⬇ Export
+        </AdminHeaderGhostLink>
+      </AdminPageHeader>
 
-      <form className="mb-4 flex flex-wrap items-center gap-2.5" method="get">
-        <input
-          type="text"
-          name="q"
-          defaultValue={sp.q ?? ""}
-          placeholder="Search by SKU or title…"
-          className="min-w-[220px] flex-1 rounded-lg border border-neutral-300 bg-white px-3.5 py-2 text-[0.84rem] outline-none focus:border-red-500"
-        />
-        <select
-          name="category"
-          defaultValue={sp.category ?? "All"}
-          className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-[0.84rem] outline-none focus:border-red-500"
-        >
-          <option value="All">All Categories</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <select
-          name="condition"
-          defaultValue={sp.condition ?? "All"}
-          className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-[0.84rem] outline-none focus:border-red-500"
-        >
-          <option value="All">All Conditions</option>
-          {facets.conditions.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <select
-          name="bone"
-          defaultValue={sp.bone ?? "All"}
-          className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-[0.84rem] outline-none focus:border-red-500"
-        >
-          <option value="All">All Bone Types</option>
-          {facets.bones.map((b) => (
-            <option key={b} value={b}>
-              {b}
-            </option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-[0.9rem] font-bold text-white hover:bg-neutral-800"
-        >
-          Filter
-        </button>
-      </form>
-
-      <AdminTableCard>
-        <table className="w-full text-left text-[0.9rem]">
-          <thead>
-            <tr className="border-b border-neutral-100 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
-              <th className="px-4 py-2.5">SKU</th>
-              <th className="px-4 py-2.5">Parent Product</th>
-              <th className="px-4 py-2.5">Category</th>
-              <th className="px-4 py-2.5">Variant</th>
-              <th className="px-4 py-2.5">Stock</th>
-              <th className="px-4 py-2.5">Price</th>
-              <th className="px-4 py-2.5">Supplier</th>
-              <th className="px-4 py-2.5"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {variants.map((v) => (
-              <tr key={v.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
-                <td className="px-4 py-2.5 font-mono text-[0.84rem] text-neutral-500">{v.sku || "—"}</td>
-                <td className="px-4 py-2.5 font-semibold text-neutral-900">
-                  <Link href={`/admin/products/${v.productId}`} className="hover:text-red-600">
-                    {v.productName}
-                  </Link>
-                </td>
-                <td className="px-4 py-2.5 text-neutral-600">{v.category}</td>
-                <td className="px-4 py-2.5 text-neutral-600">{v.label}</td>
-                <td className="px-4 py-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <StockBadge state={v.stockState} />
-                    <span className="text-neutral-400">{v.stockCount}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-2.5 font-semibold text-neutral-900">
-                  {v.basePrice != null ? `$${v.basePrice.toFixed(2)}` : "—"}
-                </td>
-                <td className="px-4 py-2.5 text-neutral-600">
-                  {v.supplierNames.length ? v.supplierNames.join(", ") : "—"}
-                </td>
-                <td className="px-4 py-2.5 text-right">
-                  <Link
-                    href={`/admin/variants/${v.id}`}
-                    className="font-bold text-red-600 hover:underline"
-                  >
-                    Edit
-                  </Link>
-                </td>
-              </tr>
-            ))}
-            {variants.length === 0 && (
-              <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-neutral-400">
-                  No variants found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </AdminTableCard>
-
-      {totalPages > 1 && (
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <Link
-              key={p}
-              href={pageHref(p)}
-              className={`rounded-lg px-3 py-1.5 text-[0.8rem] font-bold ${
-                p === page ? "bg-red-600 text-white" : "bg-white text-neutral-600 hover:bg-neutral-100"
-              }`}
+      <div className="flex-1 overflow-y-auto p-5">
+        <form method="get" action="/admin/variants">
+          <input type="hidden" name="q" value={sp.q ?? ""} />
+          <AdminToolbar>
+            <AdminFilterSelect name="category" defaultValue={sp.category ?? "All"}>
+              <option value="All">All Categories</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </AdminFilterSelect>
+            <AdminFilterSelect name="condition" defaultValue={sp.condition ?? "All"}>
+              <option value="All">All Conditions</option>
+              {facets.conditions.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </AdminFilterSelect>
+            <AdminFilterSelect name="bone" defaultValue={sp.bone ?? "All"}>
+              <option value="All">All Bone Types</option>
+              {facets.bones.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </AdminFilterSelect>
+            <button
+              type="submit"
+              className="rounded-md bg-[#1a1816] px-3 py-1.5 text-[14px] font-semibold text-white hover:bg-[#3a3632]"
             >
-              {p}
-            </Link>
-          ))}
-        </div>
-      )}
+              Filter
+            </button>
+            <AdminToolbarSpacer />
+            <AdminCountBadge>{total} variants</AdminCountBadge>
+          </AdminToolbar>
+        </form>
+
+        <AdminTableCard>
+          <table className="w-full text-left text-[14px]">
+            <thead>
+              <tr className="bg-[#f0ede9]">
+                {["SKU", "Parent Product", "Category", "Condition", "Cut / Style", "Bone", "Skin", "Stock", "Retail Price", "Supplier"].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      className="px-2.5 py-1.5 text-[13px] font-semibold tracking-wide text-[#5a5450] uppercase"
+                    >
+                      {h}
+                    </th>
+                  ),
+                )}
+                <th className="w-16 px-2.5 py-1.5" />
+              </tr>
+            </thead>
+            <tbody>
+              {variants.map((v, i) => (
+                <tr
+                  key={v.id}
+                  className={`border-b border-[#e4e1dc] last:border-0 hover:bg-[#fff5f4] ${
+                    i % 2 === 1 ? "bg-[#faf9f7]" : "bg-white"
+                  }`}
+                >
+                  <td className="px-2.5 py-1.5 font-[family-name:var(--font-plex-mono)] text-[14px] text-[#5a5450]">
+                    {v.sku || "—"}
+                  </td>
+                  <td className="px-2.5 py-1.5 font-semibold text-[#1a1816]">
+                    <Link href={`/admin/products/${v.productId}`} className="hover:text-[#e05a4a]">
+                      {v.productName}
+                    </Link>
+                  </td>
+                  <td className="px-2.5 py-1.5">
+                    <AdminBadge tone="category">{v.category}</AdminBadge>
+                  </td>
+                  <td className="px-2.5 py-1.5">
+                    {v.conditionType ? <AdminBadge tone={v.conditionType === "Fresh" ? "green" : "blue"}>{v.conditionType}</AdminBadge> : "—"}
+                  </td>
+                  <td className="px-2.5 py-1.5 text-[#5a5450]">{v.cutType || "—"}</td>
+                  <td className="px-2.5 py-1.5">
+                    {v.boneType ? <AdminBadge tone="category">{v.boneType}</AdminBadge> : "—"}
+                  </td>
+                  <td className="px-2.5 py-1.5 text-[#5a5450]">{v.skinType || "—"}</td>
+                  <td className="px-2.5 py-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <StockBadge state={v.stockState} />
+                      <span className="text-[#9a9490]">{v.stockCount}</span>
+                    </div>
+                  </td>
+                  <td className="px-2.5 py-1.5 font-[family-name:var(--font-plex-mono)] font-bold text-[#c04535]">
+                    {v.basePrice != null ? `$${v.basePrice.toFixed(2)}` : "—"}
+                  </td>
+                  <td className="px-2.5 py-1.5">
+                    {v.supplierNames.length ? (
+                      <div className="flex flex-wrap gap-1">
+                        {v.supplierNames.map((s) => (
+                          <AdminBadge key={s} tone="blue" mono>
+                            {s.split(" ")[0]}
+                          </AdminBadge>
+                        ))}
+                      </div>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td className="px-2.5 py-1.5 text-right">
+                    <Link href={`/admin/variants/${v.id}`} className="rounded p-1 text-[15px] hover:bg-[#fdf2f1]" aria-label="Edit">
+                      ✏️
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+              {variants.length === 0 && (
+                <tr>
+                  <td colSpan={11} className="px-4 py-8 text-center text-[#9a9490]">
+                    No variants found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </AdminTableCard>
+
+        {totalPages > 1 && (
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <Link
+                key={p}
+                href={pageHref(p)}
+                className={`rounded-md px-3 py-1.5 text-[13px] font-bold ${
+                  p === page
+                    ? "bg-[#e05a4a] text-white"
+                    : "border border-[#e4e1dc] bg-white text-[#5a5450] hover:bg-[#f0ede9]"
+                }`}
+              >
+                {p}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

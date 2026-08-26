@@ -3,22 +3,28 @@ import { listAdminSeoRows } from "@/lib/db/queries/adminSeo";
 import { getAdminProductCategories } from "@/lib/db/queries/adminProducts";
 import { SeoInlineEditor } from "@/components/admin/SeoInlineEditor";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
-import { ExportLink } from "@/components/admin/ExportLink";
+import { AdminBadge, type AdminBadgeTone } from "@/components/admin/AdminBadge";
+import { AdminPageHeader, AdminHeaderGhostLink } from "@/components/admin/AdminPageHeader";
+import {
+  AdminToolbar,
+  AdminFilterSelect,
+  AdminToolbarSeparator,
+  AdminChipLink,
+  AdminToolbarSpacer,
+  AdminCountBadge,
+} from "@/components/admin/AdminToolbar";
 
 const PAGE_SIZE = 25;
 
-function StatusBadge({ status }: { status: "complete" | "missing" | "warning" }) {
-  const styles = {
-    complete: "bg-green-100 text-green-700",
-    warning: "bg-amber-100 text-amber-700",
-    missing: "bg-red-100 text-red-700",
-  } as const;
-  const labels = { complete: "Complete", warning: "Warning", missing: "Missing" } as const;
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-[0.78rem] font-bold ${styles[status]}`}>
-      {labels[status]}
-    </span>
-  );
+const STATUS_TONE: Record<"complete" | "missing" | "warning", AdminBadgeTone> = {
+  complete: "green",
+  warning: "amber",
+  missing: "red",
+};
+const STATUS_LABEL = { complete: "Complete", warning: "Warning", missing: "Missing" } as const;
+
+function SeoStatusBadge({ status }: { status: "complete" | "missing" | "warning" }) {
+  return <AdminBadge tone={STATUS_TONE[status]}>{STATUS_LABEL[status]}</AdminBadge>;
 }
 
 export default async function AdminSeoPage({
@@ -56,131 +62,145 @@ export default async function AdminSeoPage({
   if (sp.filter) exportParams.set("filter", sp.filter);
 
   return (
-    <div className="p-6">
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-serif text-xl font-black text-neutral-900">SEO Manager</h1>
-          <p className="text-[0.9rem] text-neutral-500">{missingCount} products need attention</p>
-        </div>
-        <ExportLink href={`/api/admin/export/seo?${exportParams.toString()}`} />
-      </div>
+    <div className="flex h-full flex-col">
+      <AdminPageHeader title="SEO Manager" subtitle={`${missingCount} products need attention`}>
+        <AdminHeaderGhostLink href={`/api/admin/export/seo?${exportParams.toString()}`}>
+          ⬇ Export
+        </AdminHeaderGhostLink>
+      </AdminPageHeader>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2.5">
-        <form method="get" className="flex items-center gap-2.5">
+      <div className="flex-1 overflow-y-auto p-5">
+        <form method="get" action="/admin/seo">
           {sp.filter && <input type="hidden" name="filter" value={sp.filter} />}
-          <select
-            name="category"
-            defaultValue={sp.category ?? "All"}
-            className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-[0.84rem] outline-none focus:border-red-500"
-          >
-            <option value="All">All Categories</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className="rounded-lg bg-neutral-900 px-4 py-2 text-[0.9rem] font-bold text-white hover:bg-neutral-800"
-          >
-            Filter
-          </button>
+          <AdminToolbar>
+            <AdminFilterSelect name="category" defaultValue={sp.category ?? "All"}>
+              <option value="All">All Categories</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </AdminFilterSelect>
+            <button
+              type="submit"
+              className="rounded-md bg-[#1a1816] px-3 py-1.5 text-[14px] font-semibold text-white hover:bg-[#3a3632]"
+            >
+              Filter
+            </button>
+            <AdminToolbarSeparator />
+            <AdminChipLink active={!sp.filter} href={filterHref(undefined)}>
+              All
+            </AdminChipLink>
+            <AdminChipLink active={sp.filter === "missing"} href={filterHref("missing")}>
+              Missing SEO
+            </AdminChipLink>
+            <AdminChipLink active={sp.filter === "complete"} href={filterHref("complete")}>
+              Complete
+            </AdminChipLink>
+            <AdminChipLink active={sp.filter === "warning"} href={filterHref("warning")}>
+              Warnings
+            </AdminChipLink>
+            <AdminToolbarSpacer />
+            <AdminCountBadge>{missingCount} need attention</AdminCountBadge>
+          </AdminToolbar>
         </form>
 
-        <div className="ml-auto flex gap-1.5">
-          {(["All", "Missing", "Warnings", "Complete"] as const).map((label) => {
-            const value = label === "All" ? undefined : label === "Warnings" ? "warning" : label.toLowerCase();
-            const active = (sp.filter ?? "All") === (value ?? "All");
-            return (
+        <AdminTableCard>
+          <table className="w-full text-left text-[14px]">
+            <thead>
+              <tr className="bg-[#f0ede9]">
+                {["Product / SKU", "Category", "Meta Title", "Title Len", "Meta Description", "Desc Len", "Alt Tag", "SEO Score"].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      className="px-2.5 py-1.5 text-[13px] font-semibold tracking-wide text-[#5a5450] uppercase"
+                    >
+                      {h}
+                    </th>
+                  ),
+                )}
+                <th className="w-16 px-2.5 py-1.5" />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr
+                  key={r.id}
+                  className={`border-b border-[#e4e1dc] last:border-0 hover:bg-[#fff5f4] ${
+                    i % 2 === 1 ? "bg-[#faf9f7]" : "bg-white"
+                  }`}
+                >
+                  <td className="px-2.5 py-1.5">
+                    <div className="font-semibold text-[#1a1816]">{r.name}</div>
+                    <div className="font-[family-name:var(--font-plex-mono)] text-[12px] text-[#9a9490]">
+                      {r.sku || "—"}
+                    </div>
+                  </td>
+                  <td className="px-2.5 py-1.5">
+                    <AdminBadge tone="category">{r.category}</AdminBadge>
+                  </td>
+                  <td className="max-w-[220px] truncate px-2.5 py-1.5 text-[#5a5450]">
+                    {r.metaTitle || <span className="text-[#cc2222]">Missing</span>}
+                  </td>
+                  <td className="px-2.5 py-1.5 font-[family-name:var(--font-plex-mono)] text-[13px] text-[#9a9490]">
+                    {r.metaTitleLen}
+                  </td>
+                  <td className="max-w-[280px] truncate px-2.5 py-1.5 text-[#5a5450]">
+                    {r.metaDesc || <span className="text-[#cc2222]">Missing</span>}
+                  </td>
+                  <td className="px-2.5 py-1.5 font-[family-name:var(--font-plex-mono)] text-[13px] text-[#9a9490]">
+                    {r.metaDescLen}
+                  </td>
+                  <td className="px-2.5 py-1.5">
+                    {r.hasAltTag ? <span className="text-[#1e8a4a]">✓</span> : <span className="text-[#c4c0bc]">—</span>}
+                  </td>
+                  <td className="px-2.5 py-1.5">
+                    <div className="flex items-center gap-2">
+                      <SeoStatusBadge status={r.status} />
+                      <span className="font-[family-name:var(--font-plex-mono)] text-[13px] text-[#9a9490]">
+                        {r.score}%
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-2.5 py-1.5 text-right">
+                    <SeoInlineEditor
+                      productId={r.id}
+                      productName={r.name}
+                      initialMetaTitle={r.metaTitle}
+                      initialMetaDesc={r.metaDesc}
+                    />
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-8 text-center text-[#9a9490]">
+                    No products found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </AdminTableCard>
+
+        {totalPages > 1 && (
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
               <Link
-                key={label}
-                href={filterHref(value)}
-                className={`rounded-lg px-3 py-1.5 text-[0.86rem] font-bold ${
-                  active ? "bg-red-600 text-white" : "bg-white text-neutral-600 hover:bg-neutral-100"
+                key={p}
+                href={pageHref(p)}
+                className={`rounded-md px-3 py-1.5 text-[13px] font-bold ${
+                  p === page
+                    ? "bg-[#e05a4a] text-white"
+                    : "border border-[#e4e1dc] bg-white text-[#5a5450] hover:bg-[#f0ede9]"
                 }`}
               >
-                {label}
+                {p}
               </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      <AdminTableCard>
-        <table className="w-full text-left text-[0.9rem]">
-          <thead>
-            <tr className="border-b border-neutral-100 text-[0.78rem] font-bold tracking-wide text-neutral-400 uppercase">
-              <th className="px-4 py-2.5">Product / SKU</th>
-              <th className="px-4 py-2.5">Category</th>
-              <th className="px-4 py-2.5">Meta Title</th>
-              <th className="px-4 py-2.5">Title Len</th>
-              <th className="px-4 py-2.5">Meta Description</th>
-              <th className="px-4 py-2.5">Desc Len</th>
-              <th className="px-4 py-2.5">Alt Tag</th>
-              <th className="px-4 py-2.5">SEO Score</th>
-              <th className="px-4 py-2.5"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
-                <td className="px-4 py-2.5">
-                  <div className="font-semibold text-neutral-900">{r.name}</div>
-                  <div className="font-mono text-[0.78rem] text-neutral-400">{r.sku || "—"}</div>
-                </td>
-                <td className="px-4 py-2.5 text-neutral-600">{r.category}</td>
-                <td className="max-w-[220px] truncate px-4 py-2.5 text-neutral-600">
-                  {r.metaTitle || <span className="text-red-500">Missing</span>}
-                </td>
-                <td className="px-4 py-2.5 text-neutral-500">{r.metaTitleLen}</td>
-                <td className="max-w-[240px] truncate px-4 py-2.5 text-neutral-600">
-                  {r.metaDesc || <span className="text-red-500">Missing</span>}
-                </td>
-                <td className="px-4 py-2.5 text-neutral-500">{r.metaDescLen}</td>
-                <td className="px-4 py-2.5">{r.hasAltTag ? "✓" : "—"}</td>
-                <td className="px-4 py-2.5">
-                  <div className="flex items-center gap-2">
-                    <StatusBadge status={r.status} />
-                    <span className="text-neutral-400">{r.score}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-2.5 text-right">
-                  <SeoInlineEditor
-                    productId={r.id}
-                    productName={r.name}
-                    initialMetaTitle={r.metaTitle}
-                    initialMetaDesc={r.metaDesc}
-                  />
-                </td>
-              </tr>
             ))}
-            {rows.length === 0 && (
-              <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-neutral-400">
-                  No products found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </AdminTableCard>
-
-      {totalPages > 1 && (
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <Link
-              key={p}
-              href={pageHref(p)}
-              className={`rounded-lg px-3 py-1.5 text-[0.8rem] font-bold ${
-                p === page ? "bg-red-600 text-white" : "bg-white text-neutral-600 hover:bg-neutral-100"
-              }`}
-            >
-              {p}
-            </Link>
-          ))}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
