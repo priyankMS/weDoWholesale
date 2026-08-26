@@ -1,5 +1,7 @@
 import { Sequelize } from "sequelize";
 
+import "mysql2";
+
 declare global {
   var __sequelize: Sequelize | undefined;
 }
