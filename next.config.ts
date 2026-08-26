@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   // sequelize's dialect loader statically requires postgres/sqlite/mssql
   // drivers we never use (e.g. pg-hstore) — keep it external so Next.js
   // doesn't try to bundle those optional deps.
-  serverExternalPackages: ["sequelize"],
+  serverExternalPackages: ["sequelize", "mysql2"],
 };
 
 export default nextConfig;
