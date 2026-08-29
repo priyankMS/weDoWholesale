@@ -23,6 +23,7 @@ export async function POST(
       orderItemId: parsed.data.orderItemId,
       actualQuantity: parsed.data.actualQuantity,
       note: parsed.data.note,
+      manualAmount: parsed.data.manualAmount,
     });
     return NextResponse.json(result);
   } catch (err) {

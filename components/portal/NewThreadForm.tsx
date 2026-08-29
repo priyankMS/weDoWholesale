@@ -9,12 +9,20 @@ import { getApiErrorMessage } from "@/lib/api/error";
 import { createThread } from "@/lib/api/messages";
 import { NEW_THREAD_TOPICS, NEW_THREAD_TOPIC_LABELS, type NewThreadTopic } from "@/lib/validation/messages";
 
-// Screen 29's "New message" compose screen.
-export function NewThreadForm() {
+// Screen 29's "New message" compose screen. initialOrderNumber/initialTopic
+// let a caller (e.g. an order's "Question" button) land here pre-filled
+// rather than making the customer type the order number again.
+export function NewThreadForm({
+  initialOrderNumber,
+  initialTopic,
+}: {
+  initialOrderNumber?: string;
+  initialTopic?: NewThreadTopic;
+} = {}) {
   const router = useRouter();
   const showToast = useToast();
-  const [topic, setTopic] = useState<NewThreadTopic>("general");
-  const [orderNumber, setOrderNumber] = useState("");
+  const [topic, setTopic] = useState<NewThreadTopic>(initialTopic ?? "general");
+  const [orderNumber, setOrderNumber] = useState(initialOrderNumber ?? "");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
 

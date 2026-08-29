@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { getOrderDetail } from "@/lib/db/queries/account";
@@ -259,14 +260,12 @@ export default async function OrderDetailPage({
 
       <div className="mt-3 flex gap-2 px-4 lg:px-0">
         <ReorderButton orderNumber={order.orderNumber} className="flex-1" />
-        <a
-          href="https://wa.me/17807227623"
-          target="_blank"
-          rel="noreferrer"
+        <Link
+          href={`/messages/new?order=${encodeURIComponent(order.orderNumber)}&topic=invoice`}
           className="flex flex-1 items-center justify-center gap-2 rounded-xl border-[1.5px] border-neutral-200 bg-white px-4 py-4 text-[0.92rem] font-extrabold text-neutral-700 transition-colors hover:bg-neutral-50"
         >
           💬 Question
-        </a>
+        </Link>
       </div>
     </div>
   );

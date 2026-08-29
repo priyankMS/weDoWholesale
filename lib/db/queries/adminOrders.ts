@@ -105,40 +105,76 @@ export type WeightAdjustmentSnapshot = {
 // Records the final delivered/cut weight for a variable-weight line item
 // against what was ordered — the "estimated weight, settled at actual
 // weight" pattern already flagged in the checkout copy. Deliberately does
-// NOT touch Order/OrderItem totals or trigger any Stripe charge/refund:
-// the original invoice stays intact as a record of what was actually
-// charged, and this is purely the audit trail + customer notice an admin
-// uses to settle the difference manually (extra charge, refund, or
-// substitute item) through whichever channel fits the order's payment
-// method. OrderItemHistory already existed for exactly this ("ordered vs.
+// NOT touch OrderItem or Order-level totals (quantity/totalPrice/
+// totalAmount/finalAmount) or trigger any Stripe charge/refund: "Ordered"
+// must always read back as what the customer actually ordered, and the
+// original invoice stays intact as a record of what was actually charged.
+// This is purely the audit trail + customer notice an admin uses to settle
+// the difference manually (extra charge, refund, or substitute item)
+// through whichever channel fits the order's payment method.
+// OrderItemHistory already existed for exactly this ("ordered vs.
 // picked-up weight" per its own doc comment) but had never been wired to
 // an admin action.
+//
+// Because the item itself is never mutated, the "before" baseline for
+// this adjustment is read from the most recent prior OrderItemHistory
+// entry for this item (if any) rather than from the item's own quantity —
+// otherwise every adjustment (including an accidental re-save of the same
+// value) would diff against the original ordered quantity forever,
+// producing duplicate-looking history rows for what was really one
+// ongoing correction. OrderItemHistory has no orderItemId column, so the
+// lookup matches on orderId + productName, same as the customer-facing
+// revision log already does.
 export async function recordAdminWeightAdjustment(input: {
   orderId: number;
   orderItemId: number;
   actualQuantity: number;
   note?: string | null;
+  // Lets an admin override the auto (actual - previous) * unitPrice figure
+  // with a manually-typed dollar adjustment (e.g. a goodwill credit, or a
+  // correction that isn't purely weight-driven). When omitted, the auto
+  // calculation is used as before.
+  manualAmount?: number | null;
 }): Promise<{ adjustmentAmount: number }> {
   const item = await OrderItem.findOne({ where: { id: input.orderItemId, orderId: input.orderId } });
   if (!item) throw new Error("Order item not found");
 
   const unitPrice = Number(item.unitPrice);
-  const before: WeightAdjustmentSnapshot = {
+  const productName = item.productName ?? `Item #${item.productId}`;
+
+  const priorHistory = await OrderItemHistory.findOne({
+    where: { orderId: input.orderId, productName, action: "updated" },
+    order: [["createdAt", "DESC"]],
+  });
+  let before: WeightAdjustmentSnapshot = {
     quantity: Number(item.quantity),
     unitPrice,
     totalPrice: Number(item.totalPrice),
   };
+  if (priorHistory?.snapshotAfter) {
+    try {
+      const prev = JSON.parse(priorHistory.snapshotAfter) as WeightAdjustmentSnapshot;
+      before = { quantity: Number(prev.quantity), unitPrice, totalPrice: Number(prev.totalPrice) };
+    } catch {
+      // fall back to the item's original quantity/totalPrice above
+    }
+  }
+
+  const hasManualAmount =
+    input.manualAmount !== null && input.manualAmount !== undefined && !Number.isNaN(input.manualAmount);
+  const adjustmentAmount = hasManualAmount
+    ? Number(input.manualAmount!.toFixed(2))
+    : Number(((input.actualQuantity - before.quantity) * unitPrice).toFixed(2));
   const after: WeightAdjustmentSnapshot = {
     quantity: input.actualQuantity,
     unitPrice,
-    totalPrice: Number((input.actualQuantity * unitPrice).toFixed(2)),
+    totalPrice: Number((before.totalPrice + adjustmentAmount).toFixed(2)),
   };
-  const adjustmentAmount = Number((after.totalPrice - before.totalPrice).toFixed(2));
 
   await OrderItemHistory.create({
     orderId: input.orderId,
     action: "updated",
-    productName: item.productName ?? `Item #${item.productId}`,
+    productName,
     sku: item.sku,
     snapshotBefore: JSON.stringify({ ...before, note: input.note ?? null }),
     snapshotAfter: JSON.stringify(after),

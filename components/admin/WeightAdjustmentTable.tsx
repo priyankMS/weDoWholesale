@@ -10,8 +10,12 @@ export type WeightAdjustmentItem = {
   id: number;
   productName: string | null;
   sku: string | null;
+  /** Originally ordered quantity — display-only, never changes. */
   quantity: number;
+  /** Latest settled/actual quantity (falls back to `quantity` if never adjusted) — the editable baseline. */
+  actualQuantity: number;
   unitPrice: number;
+  /** Original ordered total — display-only, never changes. */
   totalPrice: number;
 };
 
@@ -24,9 +28,10 @@ export function WeightAdjustmentTable({
 }) {
   const router = useRouter();
   const [actuals, setActuals] = useState<Record<number, string>>(
-    Object.fromEntries(items.map((i) => [i.id, String(i.quantity)])),
+    Object.fromEntries(items.map((i) => [i.id, String(i.actualQuantity)])),
   );
   const [notes, setNotes] = useState<Record<number, string>>({});
+  const [overrides, setOverrides] = useState<Record<number, string>>({});
   const [savingId, setSavingId] = useState<number | null>(null);
 
   async function handleSave(item: WeightAdjustmentItem) {
@@ -35,12 +40,22 @@ export function WeightAdjustmentTable({
       toast.error("Enter a valid weight");
       return;
     }
+    const overrideRaw = overrides[item.id]?.trim();
+    let manualAmount: number | null = null;
+    if (overrideRaw) {
+      manualAmount = Number(overrideRaw);
+      if (Number.isNaN(manualAmount)) {
+        toast.error("Enter a valid override amount");
+        return;
+      }
+    }
     setSavingId(item.id);
     try {
       const { adjustmentAmount } = await recordWeightAdjustment(orderId, {
         orderItemId: item.id,
         actualQuantity,
         note: notes[item.id]?.trim() || null,
+        manualAmount,
       });
       if (Math.abs(adjustmentAmount) < 0.005) {
         toast.success("Recorded — no change to invoice");
@@ -51,6 +66,8 @@ export function WeightAdjustmentTable({
             : `Recorded — $${Math.abs(adjustmentAmount).toFixed(2)} refund owed`,
         );
       }
+      setNotes((n) => ({ ...n, [item.id]: "" }));
+      setOverrides((o) => ({ ...o, [item.id]: "" }));
       router.refresh();
     } catch (err) {
       toast.error(getApiErrorMessage(err));
@@ -74,11 +91,15 @@ export function WeightAdjustmentTable({
       <tbody>
         {items.map((item, i) => {
           const actualQuantity = Number(actuals[item.id]);
-          const adjustment =
+          const autoAdjustment =
             !Number.isNaN(actualQuantity) && item.unitPrice
-              ? (actualQuantity - item.quantity) * item.unitPrice
+              ? (actualQuantity - item.actualQuantity) * item.unitPrice
               : 0;
-          const changed = actuals[item.id] !== String(item.quantity);
+          const overrideRaw = overrides[item.id]?.trim();
+          const hasOverride = !!overrideRaw && !Number.isNaN(Number(overrideRaw));
+          const adjustment = hasOverride ? Number(overrideRaw) : autoAdjustment;
+          const weightChanged = actuals[item.id] !== String(item.actualQuantity);
+          const changed = weightChanged || hasOverride;
           return (
             <tr
               key={item.id}
@@ -103,13 +124,30 @@ export function WeightAdjustmentTable({
               </td>
               <td className="px-2.5 py-1.5">
                 {changed && !Number.isNaN(actualQuantity) ? (
-                  <span
-                    className={`font-bold ${adjustment > 0 ? "text-[#c48a00]" : adjustment < 0 ? "text-[#1e8a4a]" : "text-[#9a9490]"}`}
-                  >
-                    {adjustment > 0 ? "+" : ""}${adjustment.toFixed(2)}
-                  </span>
+                  <div className="flex flex-col">
+                    <span
+                      className={`font-bold ${adjustment > 0 ? "text-[#c48a00]" : adjustment < 0 ? "text-[#1e8a4a]" : "text-[#9a9490]"}`}
+                    >
+                      {adjustment > 0 ? "+" : ""}${adjustment.toFixed(2)}
+                    </span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder={`Override (auto ${autoAdjustment > 0 ? "+" : ""}$${autoAdjustment.toFixed(2)})`}
+                      value={overrides[item.id] ?? ""}
+                      onChange={(e) => setOverrides((o) => ({ ...o, [item.id]: e.target.value }))}
+                      className="mt-1 w-40 rounded border border-[#d0ccc6] px-1.5 py-1 text-[12px] outline-none focus:border-[#e05a4a]"
+                    />
+                  </div>
                 ) : (
-                  <span className="text-[#c4c0bc]">—</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Manual $ adjustment"
+                    value={overrides[item.id] ?? ""}
+                    onChange={(e) => setOverrides((o) => ({ ...o, [item.id]: e.target.value }))}
+                    className="w-40 rounded border border-[#d0ccc6] px-1.5 py-1 text-[12px] text-[#9a9490] outline-none focus:border-[#e05a4a] focus:text-[#1a1816]"
+                  />
                 )}
               </td>
               <td className="px-2.5 py-1.5 text-right">

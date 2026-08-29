@@ -26,6 +26,21 @@ export default async function AdminOrderDetailPage({
     where: { orderId: order.id, action: "updated" },
     order: [["createdAt", "DESC"]],
   });
+  // adjustmentHistory is sorted newest-first, so the first entry seen per
+  // product here is its latest settled weight — used to prefill "Actual
+  // (kg)" and as the diff baseline going forward, while item.quantity
+  // (below) stays the untouched, originally-ordered weight for the
+  // "Ordered" column.
+  const latestActualByProduct = new Map<string, number>();
+  for (const h of adjustmentHistory) {
+    if (latestActualByProduct.has(h.productName)) continue;
+    try {
+      const after: WeightSnapshot = JSON.parse(h.snapshotAfter ?? "{}");
+      if (typeof after.quantity === "number") latestActualByProduct.set(h.productName, after.quantity);
+    } catch {
+      // leave unset — falls back to the ordered quantity below
+    }
+  }
   const totalAdjustment = adjustmentHistory.reduce((sum, h) => {
     try {
       const before: WeightSnapshot = JSON.parse(h.snapshotBefore ?? "{}");
@@ -66,6 +81,8 @@ export default async function AdminOrderDetailPage({
                     productName: item.productName,
                     sku: item.sku,
                     quantity: Number(item.quantity),
+                    actualQuantity:
+                      latestActualByProduct.get(item.productName ?? "") ?? Number(item.quantity),
                     unitPrice: Number(item.unitPrice),
                     totalPrice: Number(item.totalPrice),
                   }))}

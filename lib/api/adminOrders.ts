@@ -8,7 +8,12 @@ export async function updateAdminOrderStatus(id: number, orderStatus: OrderStatu
 
 export async function recordWeightAdjustment(
   orderId: number,
-  input: { orderItemId: number; actualQuantity: number; note?: string | null },
+  input: {
+    orderItemId: number;
+    actualQuantity: number;
+    note?: string | null;
+    manualAmount?: number | null;
+  },
 ) {
   const res = await apiClient.post<{ adjustmentAmount: number }>(
     `/admin/orders/${orderId}/weight-adjustment`,
