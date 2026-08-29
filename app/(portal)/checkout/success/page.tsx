@@ -78,9 +78,8 @@ export default async function CheckoutSuccessPage({
   }
 
   return (
-    <div className="mx-4 mt-4 mb-8 max-w-lg lg:mx-auto">
+    <div className="mx-4 mt-4 mb-8 max-w-lg text-center lg:mx-auto">
       <ClearCartOnMount />
-      <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-6 text-center">
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-green-50 text-[1.6rem] text-green-600">
           ✓
         </div>
@@ -91,9 +90,9 @@ export default async function CheckoutSuccessPage({
           Your card payment went through (Stripe test mode) and your order is confirmed.
         </div>
         <div className="mb-4 overflow-hidden rounded-2xl border-[1.5px] border-neutral-200 text-left">
-          <div className="flex items-center justify-between border-b border-neutral-200 bg-primary-50 px-4 py-2.5">
-            <span className="font-serif font-black text-neutral-900">#{order.orderNumber}</span>
-            <span className="rounded-full bg-primary-500 px-2.5 py-0.75 text-[0.66rem] font-bold text-white">
+          <div className="flex items-center justify-between border-b border-neutral-200 bg-primary-500 px-4 py-2.5">
+            <span className="font-serif font-black text-white">#{order.orderNumber}</span>
+            <span className="rounded-full bg-white/25 px-2.5 py-0.75 text-[0.66rem] font-bold text-white">
               Paid
             </span>
           </div>
@@ -102,16 +101,21 @@ export default async function CheckoutSuccessPage({
             ["Delivery date", order.deliveryDate ?? "—"],
             ["Window", order.timeSlot ?? "—"],
             ["Payment", "Card (Stripe)"],
-            ["Total charged", `$${order.finalAmount.toFixed(2)}`],
           ].map(([label, val]) => (
             <div
               key={label}
-              className="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5 text-[0.84rem] last:border-none"
+              className="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5 text-[0.84rem]"
             >
               <span className="text-neutral-500">{label}</span>
               <span className="font-bold text-neutral-900">{val}</span>
             </div>
           ))}
+          <div className="flex items-center justify-between px-4 py-2.5 text-[0.84rem]">
+            <span className="font-bold text-neutral-900">Total charged</span>
+            <span className="font-serif font-black text-primary-600">
+              ${order.finalAmount.toFixed(2)}
+            </span>
+          </div>
         </div>
 
         <WhatsNextSteps />
@@ -121,7 +125,7 @@ export default async function CheckoutSuccessPage({
             href="https://wa.me/17807227623"
             target="_blank"
             rel="noreferrer"
-            className="rounded-xl bg-primary-500 py-3 text-[0.88rem] font-extrabold text-white hover:bg-primary-600"
+            className="rounded-xl bg-green-500 py-3 text-[0.88rem] font-extrabold text-white hover:bg-green-600"
           >
             💬 Message us on WhatsApp
           </a>
@@ -138,7 +142,6 @@ export default async function CheckoutSuccessPage({
             View order history →
           </Link>
         </div>
-      </div>
     </div>
   );
 }

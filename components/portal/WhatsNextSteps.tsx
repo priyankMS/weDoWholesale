@@ -15,8 +15,8 @@ const STEPS = [
 
 export function WhatsNextSteps() {
   return (
-    <div className="mb-4 text-left">
-      <div className="mb-2 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase">
+    <div className="mb-4 rounded-2xl border-[1.5px] border-neutral-200 bg-white p-4 text-left">
+      <div className="mb-3 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase">
         What happens next
       </div>
       <div className="flex flex-col gap-3">

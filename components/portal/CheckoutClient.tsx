@@ -32,7 +32,13 @@ const WINDOW_LABEL: Record<DeliveryWindow, string> = {
 
 const PAYMENT_META: Record<
   PaymentOption,
-  { icon: string; label: string; desc: string; note?: string }
+  {
+    icon: string;
+    label: string;
+    desc: string;
+    note?: string;
+    badge?: { text: string; tone: "amber" | "green" };
+  }
 > = {
   card: {
     icon: "💳",
@@ -44,16 +50,18 @@ const PAYMENT_META: Record<
     label: "Cash on delivery",
     desc: "Pay the driver when your order arrives",
     note: "A 2% cash-handling surcharge applies.",
+    badge: { text: "+2% fee", tone: "amber" },
   },
   e_transfer: {
-    icon: "📲",
+    icon: "🏦",
     label: "E-Transfer",
     desc: "Send payment to payments@wedohalal.com before delivery",
   },
   invoice: {
     icon: "🧾",
-    label: "Invoice",
+    label: "Invoice (COD)",
     desc: "Invoice sent with your delivery, payable on receipt",
+    badge: { text: "Default", tone: "green" },
   },
   net_terms: {
     icon: "📅",
@@ -158,8 +166,7 @@ export function CheckoutClient({
 
   if (receipt) {
     return (
-      <div className="mx-4 mt-4 mb-8 max-w-lg lg:mx-auto">
-        <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-6 text-center">
+      <div className="mx-4 mt-4 mb-8 max-w-lg text-center lg:mx-auto">
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-green-50 text-[1.6rem] text-green-600">
             ✓
           </div>
@@ -171,9 +178,9 @@ export function CheckoutClient({
             shortly.
           </div>
           <div className="mb-4 overflow-hidden rounded-2xl border-[1.5px] border-neutral-200 text-left">
-            <div className="flex items-center justify-between border-b border-neutral-200 bg-primary-50 px-4 py-2.5">
-              <span className="font-serif font-black text-neutral-900">#{receipt.orderNumber}</span>
-              <span className="rounded-full bg-primary-500 px-2.5 py-0.75 text-[0.66rem] font-bold text-white">
+            <div className="flex items-center justify-between border-b border-neutral-200 bg-primary-500 px-4 py-2.5">
+              <span className="font-serif font-black text-white">#{receipt.orderNumber}</span>
+              <span className="rounded-full bg-white/25 px-2.5 py-0.75 text-[0.66rem] font-bold text-white">
                 Confirmed
               </span>
             </div>
@@ -182,16 +189,21 @@ export function CheckoutClient({
               ["Delivery date", date],
               ["Window", WINDOW_LABEL[deliveryWindow]],
               ["Payment", PAYMENT_META[paymentOption].label],
-              ["Total", `$${receipt.finalAmount.toFixed(2)}`],
             ].map(([label, val]) => (
               <div
                 key={label}
-                className="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5 text-[0.84rem] last:border-none"
+                className="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5 text-[0.84rem]"
               >
                 <span className="text-neutral-500">{label}</span>
                 <span className="font-bold text-neutral-900">{val}</span>
               </div>
             ))}
+            <div className="flex items-center justify-between px-4 py-2.5 text-[0.84rem]">
+              <span className="font-bold text-neutral-900">Total</span>
+              <span className="font-serif font-black text-primary-600">
+                ${receipt.finalAmount.toFixed(2)}
+              </span>
+            </div>
           </div>
 
           <WhatsNextSteps />
@@ -201,7 +213,7 @@ export function CheckoutClient({
               href="https://wa.me/17807227623"
               target="_blank"
               rel="noreferrer"
-              className="rounded-xl bg-primary-500 py-3 text-[0.88rem] font-extrabold text-white hover:bg-primary-600"
+              className="rounded-xl bg-green-500 py-3 text-[0.88rem] font-extrabold text-white hover:bg-green-600"
             >
               💬 Message us on WhatsApp
             </a>
@@ -218,7 +230,6 @@ export function CheckoutClient({
               View order history →
             </Link>
           </div>
-        </div>
       </div>
     );
   }
@@ -227,38 +238,47 @@ export function CheckoutClient({
 
   return (
     <div className="mx-4 mt-4 mb-8 lg:mx-auto lg:max-w-lg">
-      <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-5">
         <Link
           href="/cart"
           className="mb-3 inline-block text-[0.82rem] font-bold text-primary-500 hover:text-primary-600"
         >
-          ← Back to cart
+          {step === "delivery" ? "← Back to cart" : "← Back"}
         </Link>
-        <div className="mb-4 font-serif text-[1.35rem] font-black text-neutral-900">Checkout</div>
+        <div className="mb-5 font-serif text-[1.35rem] font-black text-neutral-900">
+          {step === "review" ? "Review order" : "Checkout"}
+        </div>
 
-      <div className="mb-4 flex items-center justify-center gap-2">
+      <div className="mb-6 flex items-center justify-center">
         {STEPS.map((s, i) => {
           const idx = STEPS.findIndex((x) => x.key === step);
           const state = i < idx ? "done" : i === idx ? "active" : "todo";
           return (
-            <div key={s.key} className="flex items-center gap-2">
-              <div
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-[0.7rem] font-bold ${
-                  state === "done"
-                    ? "bg-primary-500 text-white"
-                    : state === "active"
-                      ? "border-2 border-primary-500 text-primary-500"
-                      : "border-2 border-neutral-200 text-neutral-300"
-                }`}
-              >
-                {state === "done" ? "✓" : i + 1}
+            <div key={s.key} className="flex items-center">
+              <div className="flex flex-col items-center gap-1.5">
+                <div
+                  className={`flex h-7 w-7 items-center justify-center rounded-full text-[0.72rem] font-bold ${
+                    state === "done"
+                      ? "bg-green-500 text-white"
+                      : state === "active"
+                        ? "border-2 border-primary-500 text-primary-500"
+                        : "border-2 border-neutral-200 text-neutral-300"
+                  }`}
+                >
+                  {state === "done" ? "✓" : i + 1}
+                </div>
+                <span
+                  className={`text-[0.7rem] font-bold whitespace-nowrap ${state === "todo" ? "text-neutral-300" : "text-neutral-900"}`}
+                >
+                  {s.label}
+                </span>
               </div>
-              <span
-                className={`text-[0.76rem] font-bold ${state === "todo" ? "text-neutral-300" : "text-neutral-900"}`}
-              >
-                {s.label}
-              </span>
-              {i < STEPS.length - 1 && <span className="mx-1 h-px w-4 bg-neutral-200" />}
+              {i < STEPS.length - 1 && (
+                <span
+                  className={`mx-2 mb-4 h-0.5 w-10 sm:w-14 ${
+                    state === "done" ? "bg-neutral-800" : "bg-neutral-200"
+                  }`}
+                />
+              )}
             </div>
           );
         })}
@@ -280,13 +300,13 @@ export function CheckoutClient({
                 key={opt.value}
                 type="button"
                 onClick={() => setMethod(opt.value)}
-                className={`rounded-2xl border-[1.5px] p-3.5 text-left ${
+                className={`flex flex-col items-center rounded-2xl border-[1.5px] p-4 text-center ${
                   method === opt.value
                     ? "border-primary-500 bg-primary-50"
                     : "border-neutral-200 bg-white"
                 }`}
               >
-                <div className="mb-1 text-[1.3rem]">{opt.icon}</div>
+                <div className="mb-1.5 text-[1.5rem]">{opt.icon}</div>
                 <div className="text-[0.86rem] font-bold text-neutral-900">{opt.label}</div>
                 <div className="text-[0.7rem] text-neutral-400">{opt.sub}</div>
               </button>
@@ -375,21 +395,21 @@ export function CheckoutClient({
                 <input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="mt-1 w-32 rounded-[10px] border-[1.5px] border-neutral-200 px-2.5 py-2 text-[0.84rem] outline-none focus:border-primary-500"
+                  className="mt-1 w-32 rounded-[10px] border-[1.5px] border-neutral-200 bg-white px-2.5 py-2 text-[0.84rem] outline-none focus:border-primary-500"
                 />
               </label>
             </div>
           )}
 
           <div className="mb-2 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase">
-            Preferred date
+            Preferred delivery date
           </div>
           <input
             type="date"
             value={date}
             min={tomorrowISO()}
             onChange={(e) => setDate(e.target.value)}
-            className="mb-4 w-full rounded-[10px] border-[1.5px] border-neutral-200 px-3 py-2.5 text-[0.88rem] outline-none focus:border-primary-500"
+            className="mb-4 w-full rounded-[10px] border-[1.5px] border-neutral-200 bg-white px-3 py-2.5 text-[0.88rem] outline-none focus:border-primary-500"
           />
 
           <div className="mb-2 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase">
@@ -418,7 +438,7 @@ export function CheckoutClient({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              className="mt-1 w-full rounded-[10px] border-[1.5px] border-neutral-200 px-3 py-2.5 text-[0.88rem] outline-none focus:border-primary-500"
+              className="mt-1 w-full rounded-[10px] border-[1.5px] border-neutral-200 bg-white px-3 py-2.5 text-[0.88rem] outline-none focus:border-primary-500"
             />
           </label>
 
@@ -438,23 +458,32 @@ export function CheckoutClient({
           <div className="mb-2 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase">
             Select payment method
           </div>
-          <div className="mb-4 flex flex-col gap-2">
+          <div className="mb-4 grid grid-cols-2 gap-2.5">
             {PAYMENT_OPTIONS.map((opt) => (
               <button
                 key={opt}
                 type="button"
                 onClick={() => setPaymentOption(opt)}
-                className={`flex items-start gap-3 rounded-2xl border-[1.5px] p-3.5 text-left ${
+                className={`relative rounded-2xl border-[1.5px] p-3.5 text-left ${
                   paymentOption === opt ? "border-primary-500 bg-primary-50" : "border-neutral-200 bg-white"
                 }`}
               >
-                <span className="text-[1.2rem]">{PAYMENT_META[opt].icon}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[0.86rem] font-bold text-neutral-900">
-                    {PAYMENT_META[opt].label}
-                  </div>
-                  <div className="text-[0.76rem] text-neutral-500">{PAYMENT_META[opt].desc}</div>
+                {PAYMENT_META[opt].badge && (
+                  <span
+                    className={`absolute top-2.5 right-2.5 rounded-full px-1.5 py-0.5 text-[0.6rem] font-extrabold ${
+                      PAYMENT_META[opt].badge!.tone === "amber"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-green-100 text-green-700"
+                    }`}
+                  >
+                    {PAYMENT_META[opt].badge!.text}
+                  </span>
+                )}
+                <div className="mb-2 text-[1.2rem]">{PAYMENT_META[opt].icon}</div>
+                <div className="text-[0.86rem] font-bold text-neutral-900">
+                  {PAYMENT_META[opt].label}
                 </div>
+                <div className="text-[0.76rem] text-neutral-500">{PAYMENT_META[opt].desc}</div>
               </button>
             ))}
           </div>
@@ -490,6 +519,10 @@ export function CheckoutClient({
                 <span className="font-semibold text-neutral-900">${(val as number).toFixed(2)}</span>
               </div>
             ))}
+            <div className="flex items-center justify-between py-1 text-[0.84rem]">
+              <span className="text-neutral-500">Delivery</span>
+              <span className="font-semibold text-green-600">Free</span>
+            </div>
             <div className="mt-1.5 flex items-center justify-between border-t border-neutral-200 pt-2.5">
               <span className="font-bold text-neutral-900">Total</span>
               <span className="font-serif font-black text-primary-600">${total.toFixed(2)}</span>
@@ -536,13 +569,15 @@ export function CheckoutClient({
             ))}
           </div>
 
+          <div className="mb-2 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase">
+            Delivery details
+          </div>
           <div className="mb-4 overflow-hidden rounded-2xl border-[1.5px] border-neutral-200 bg-white">
             {[
               ["Method", method === "delivery" ? "🚚 Delivery" : "🏪 Pickup"],
               ...(method === "delivery" ? [["Delivering to", `${business}, ${city}`] as const] : []),
               ["Date", date],
               ["Window", WINDOW_LABEL[deliveryWindow]],
-              ["Payment", PAYMENT_META[paymentOption].label],
             ].map(([label, val]) => (
               <div
                 key={label}
@@ -554,7 +589,14 @@ export function CheckoutClient({
             ))}
           </div>
 
+          <div className="mb-2 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase">
+            Payment
+          </div>
           <div className="mb-4 rounded-2xl border-[1.5px] border-neutral-200 bg-white p-4">
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-2 text-[0.84rem]">
+              <span className="text-neutral-500">Method</span>
+              <span className="font-bold text-neutral-900">{PAYMENT_META[paymentOption].label}</span>
+            </div>
             {[
               ["Subtotal", subtotal],
               [`GST (${gstRatePercent}%)`, gst],
@@ -565,6 +607,10 @@ export function CheckoutClient({
                 <span className="font-semibold text-neutral-900">${(val as number).toFixed(2)}</span>
               </div>
             ))}
+            <div className="flex items-center justify-between py-1 text-[0.84rem]">
+              <span className="text-neutral-500">Delivery</span>
+              <span className="font-semibold text-green-600">Free</span>
+            </div>
             <div className="mt-1.5 flex items-center justify-between border-t border-neutral-200 pt-2.5">
               <span className="font-bold text-neutral-900">Total due</span>
               <span className="font-serif font-black text-primary-600">${total.toFixed(2)}</span>
@@ -574,9 +620,12 @@ export function CheckoutClient({
           <div className="mb-4 flex items-start gap-2.5 rounded-2xl border-[1.5px] border-amber-300 bg-amber-50 px-3.5 py-3 text-[0.78rem] text-amber-800">
             <span>⚖️</span>
             <span>
-              By placing this order you agree to WeDoHalal&apos;s Wholesale Terms &amp;
-              Conditions. Orders are binding once submitted. Substitutions may occur for
-              out-of-stock items and you&apos;ll be notified immediately.
+              By placing this order you agree to WeDoHalal&apos;s{" "}
+              <Link href="/legal/terms" target="_blank" className="font-bold underline">
+                Wholesale Terms &amp; Conditions
+              </Link>
+              . Orders are binding once submitted. Substitutions may occur for out-of-stock
+              items and you&apos;ll be notified immediately.
             </span>
           </div>
 
@@ -622,7 +671,6 @@ export function CheckoutClient({
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }
