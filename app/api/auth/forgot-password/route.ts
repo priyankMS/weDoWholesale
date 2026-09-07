@@ -5,7 +5,7 @@ import { forgotPasswordSchema } from "@/lib/validation/auth";
 import { User } from "@/lib/db/models/User";
 import { PasswordReset } from "@/lib/db/models/PasswordReset";
 import { sha256Hex } from "@/lib/auth/hash";
-import { sendEmail } from "@/lib/email/send";
+import { enqueueEmail } from "@/lib/queue/emailQueue";
 import { passwordResetEmail } from "@/lib/email/templates";
 
 const RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
           timeZone: "America/Edmonton",
         }),
       });
-      await sendEmail({ to: user.email, subject, html, text });
+      await enqueueEmail({ to: user.email, subject, html, text });
     }
   }
 

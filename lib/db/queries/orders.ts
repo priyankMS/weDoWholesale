@@ -7,9 +7,12 @@ import { WdhVariant } from "@/lib/db/models/WdhVariant";
 import { WdhProduct } from "@/lib/db/models/WdhProduct";
 import { WdhVariantPricing } from "@/lib/db/models/WdhVariantPricing";
 import { User } from "@/lib/db/models/User";
-import { bestVariantPrice } from "@/lib/db/queries/catalogue";
+import { bestVariantPrice, unitFor } from "@/lib/db/queries/catalogue";
 import { getPlatformSettings } from "@/lib/db/queries/settings";
-import { variantLabel } from "@/lib/format";
+import { getNotificationPreferences } from "@/lib/db/queries/account";
+import { formatDate, formatMoney, variantLabel } from "@/lib/format";
+import { enqueueEmail } from "@/lib/queue/emailQueue";
+import { orderConfirmationEmail } from "@/lib/email/templates/orderConfirmation";
 import type { CreateOrderInput } from "@/lib/validation/orders";
 
 const COD_SURCHARGE_RATE = 0.02;
@@ -64,6 +67,7 @@ export async function createOrder(
     sku: string | null;
     productName: string;
     qty: number;
+    unit: string;
     unitPrice: number;
     totalPrice: number;
   }[] = [];
@@ -96,6 +100,7 @@ export async function createOrder(
       sku: variant.sku,
       productName,
       qty: item.qty,
+      unit: unitFor(product?.category ?? "", variant.per ?? null),
       unitPrice: price,
       totalPrice,
     });
@@ -173,6 +178,7 @@ export async function createOrder(
         sku: li.sku,
         productName: li.productName,
         quantity: li.qty,
+        unit: li.unit,
         unitPrice: li.unitPrice,
         totalPrice: li.totalPrice,
       })),
@@ -181,6 +187,57 @@ export async function createOrder(
 
     return { orderNumber: order.orderNumber, subtotal, gstAmount, codCharges, finalAmount };
   });
+}
+
+// Sends Email 36 (order confirmation) — called right after an order is
+// actually confirmed: immediately for COD/e-transfer/net-terms orders (the
+// order itself IS the confirmation), or from the Stripe webhook once
+// payment succeeds for card orders (never from stripe-session/route.ts,
+// which only creates the order — it isn't paid yet). Respects the
+// customer's own emailOrderConfirmation notification preference.
+export async function notifyOrderConfirmed(orderNumber: string): Promise<void> {
+  const order = await Order.findOne({
+    where: { orderNumber },
+    include: [{ model: User }, { model: OrderItem }],
+  });
+  const user = (order as (Order & { User?: User }) | null)?.User;
+  if (!order || !user?.email) return;
+
+  const prefs = await getNotificationPreferences(user.id);
+  if (!prefs.emailOrderConfirmation) return;
+
+  const items = (order.get("OrderItems") as OrderItem[] | undefined) ?? [];
+  const address = order.shippingAddressId ? await Address.findByPk(order.shippingAddressId) : null;
+  const deliveryAddress =
+    order.shippingType === "pickup"
+      ? "Pickup at our warehouse"
+      : (address
+          ? [address.address, address.city, address.zipCode, address.country].filter(Boolean).join(", ")
+          : "—");
+
+  const cutoffDate = order.deliveryDate ? new Date(order.deliveryDate) : null;
+  if (cutoffDate) cutoffDate.setDate(cutoffDate.getDate() - 1);
+
+  const { subject, html, text } = orderConfirmationEmail({
+    contactName: user.contactName || user.businessName || "there",
+    businessName: user.businessName || user.contactName || "your business",
+    orderNumber: order.orderNumber,
+    deliveryDateLabel: order.deliveryDate ? formatDate(order.deliveryDate) : "To be confirmed",
+    windowLabel: order.timeSlot || "To be confirmed",
+    deliveryAddress,
+    paymentLabel: order.paymentMethod === "COD" ? "Cash on delivery" : "Online payment",
+    items: items.map((i) => ({
+      name: i.productName ?? `Item #${i.productId}`,
+      meta: `${Number(i.quantity)} ${i.unit || "kg"}${i.sku ? ` · ${i.sku}` : ""}`,
+      totalPrice: Number(i.totalPrice),
+    })),
+    subtotal: Number(order.totalAmount),
+    gstAmount: Number(order.gstAmount ?? 0),
+    deliveryFeeLabel: Number(order.shippingFee ?? 0) > 0 ? formatMoney(Number(order.shippingFee)) : "Free",
+    total: Number(order.finalAmount),
+    cancellationCutoffLabel: cutoffDate ? `${formatDate(cutoffDate)}, 6:00 PM` : "24 hours before delivery",
+  });
+  await enqueueEmail({ to: user.email, subject, html, text });
 }
 
 export type OrderSummary = {
@@ -219,11 +276,14 @@ export type StripePaymentDetails = {
 
 // Idempotent — safe for the webhook to redeliver the same event (Stripe's
 // at-least-once delivery) since it only ever moves Pending → Completed.
+// Returns whether this call was the one that actually made that
+// transition, so the caller can send the one-time order-confirmation email
+// only once instead of on every redelivered event.
 export async function markOrderPaidFromStripe(
   orderNumber: string,
   details: StripePaymentDetails,
-): Promise<void> {
-  await Order.update(
+): Promise<boolean> {
+  const [affected] = await Order.update(
     {
       paymentStatus: "Completed",
       stripeSessionId: details.stripeSessionId,
@@ -235,6 +295,7 @@ export async function markOrderPaidFromStripe(
     },
     { where: { orderNumber, paymentStatus: "Pending" } },
   );
+  return affected > 0;
 }
 
 // Covers both a delayed payment method failing (checkout.session.async_payment_failed)

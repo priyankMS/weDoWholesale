@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { listAdminSeoRows } from "@/lib/db/queries/adminSeo";
 import { getAdminProductCategories } from "@/lib/db/queries/adminProducts";
 import { SeoInlineEditor } from "@/components/admin/SeoInlineEditor";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminBadge, type AdminBadgeTone } from "@/components/admin/AdminBadge";
 import { AdminPageHeader, AdminHeaderGhostLink } from "@/components/admin/AdminPageHeader";
 import {
@@ -69,7 +69,7 @@ export default async function AdminSeoPage({
         </AdminHeaderGhostLink>
       </AdminPageHeader>
 
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
         <form method="get" action="/admin/seo">
           {sp.filter && <input type="hidden" name="filter" value={sp.filter} />}
           <AdminToolbar>
@@ -183,23 +183,7 @@ export default async function AdminSeoPage({
           </table>
         </AdminTableCard>
 
-        {totalPages > 1 && (
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <Link
-                key={p}
-                href={pageHref(p)}
-                className={`rounded-md px-3 py-1.5 text-[13px] font-bold ${
-                  p === page
-                    ? "bg-[#e05a4a] text-white"
-                    : "border border-[#e4e1dc] bg-white text-[#5a5450] hover:bg-[#f0ede9]"
-                }`}
-              >
-                {p}
-              </Link>
-            ))}
-          </div>
-        )}
+        <AdminPagination page={page} totalPages={totalPages} pageHref={pageHref} />
       </div>
     </div>
   );

@@ -39,7 +39,7 @@ export function AdminProductCreateForm({
     formState: { errors },
   } = useForm<AdminProductCreateFormValues>({
     resolver: zodResolver(adminProductCreateSchema),
-    defaultValues: { unit: "kg", stockCount: 0 },
+    defaultValues: { unit: "kg", stockStatus: "in" },
   });
 
   const selectedCategory = watch("category");
@@ -155,8 +155,12 @@ export function AdminProductCreateForm({
             <FieldError message={errors.unit?.message} />
           </div>
           <div>
-            <label className={labelClass}>Stock Count</label>
-            <input type="number" {...register("stockCount")} className={inputClass} />
+            <label className={labelClass}>Stock Status</label>
+            <select {...register("stockStatus")} className={inputClass}>
+              <option value="in">In stock</option>
+              <option value="low">Low stock</option>
+              <option value="out">Out of stock</option>
+            </select>
           </div>
         </div>
       </div>
@@ -188,7 +192,7 @@ export function AdminProductCreateForm({
             <input type="number" step="0.01" {...register("priceIncrement")} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Retail Price</label>
+            <label className={labelClass}>Wholesale Price</label>
             <input type="number" step="0.01" {...register("retailPrice")} className={inputClass} />
           </div>
         </div>

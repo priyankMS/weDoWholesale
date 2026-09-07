@@ -4,7 +4,7 @@ import { WdhProduct } from "@/lib/db/models/WdhProduct";
 import { WdhVariant } from "@/lib/db/models/WdhVariant";
 import { WdhVariantPricing } from "@/lib/db/models/WdhVariantPricing";
 import { WdhSupplier } from "@/lib/db/models/WdhSupplier";
-import { stockStateFor, type StockState } from "@/lib/db/queries/catalogue";
+import { stockStateFor, bestVariantPrice, type StockState } from "@/lib/db/queries/catalogue";
 import { variantLabel } from "@/lib/format";
 import type { AdminProductCreateInput } from "@/lib/validation/adminProducts";
 
@@ -20,7 +20,6 @@ export type AdminProductRow = {
   stockState: StockState;
   seoComplete: boolean;
   retailPrice: number | null;
-  salePercent: number | null;
 };
 
 export type AdminProductListParams = {
@@ -28,7 +27,6 @@ export type AdminProductListParams = {
   category?: string;
   supplierId?: number;
   stock?: StockState;
-  onSale?: boolean;
   seoMissing?: boolean;
   page?: number;
   pageSize?: number;
@@ -52,7 +50,7 @@ const productInclude = [
 export async function listAdminProducts(
   params: AdminProductListParams,
 ): Promise<AdminProductListResult> {
-  const { search, category, supplierId, stock, onSale, seoMissing, page = 1, pageSize = 20 } = params;
+  const { search, category, supplierId, stock, seoMissing, page = 1, pageSize = 20 } = params;
 
   const where: Record<string | symbol, unknown> = {};
   const trimmed = search?.trim();
@@ -81,8 +79,8 @@ export async function listAdminProducts(
     where.id = { [Op.in]: productIds.length ? productIds : [-1] };
   }
 
-  // Sale/stock are computed by aggregating across a product's variants, so
-  // they can't be pushed into SQL alongside the above — fetch every matching
+  // Stock is computed by aggregating across a product's variants, so it
+  // can't be pushed into SQL alongside the above — fetch every matching
   // product (unpaginated), filter in memory, then paginate the result.
   const rows = await WdhProduct.findAll({
     where,
@@ -95,17 +93,15 @@ export async function listAdminProducts(
     const supplierNames = new Set<string>();
     const prices: number[] = [];
     const stockStates: StockState[] = [];
-    let salePercent: number | null = null;
 
     for (const v of variants) {
-      stockStates.push(stockStateFor(v.stockCount ?? null));
-      if (v.basePrice != null) prices.push(Number(v.basePrice));
-      const base = v.basePrice != null ? Number(v.basePrice) : null;
-      const discount = v.discountPrice != null ? Number(v.discountPrice) : null;
-      if (base != null && base > 0 && discount != null && discount < base) {
-        const pct = Math.round((1 - discount / base) * 100);
-        if (salePercent == null || pct > salePercent) salePercent = pct;
-      }
+      stockStates.push(stockStateFor(v.stockStatus));
+      // Same effective price the storefront shows (manual basePrice
+      // override, else the per-supplier Pricing tab's computed retail) —
+      // not raw basePrice, which is null on every variant priced only
+      // through the Pricing tab.
+      const effectivePrice = bestVariantPrice(v, v.pricing ?? []);
+      if (effectivePrice != null) prices.push(effectivePrice);
       for (const p of v.pricing ?? []) {
         const pricingWithSupplier = p as WdhVariantPricing & { WdhSupplier?: WdhSupplier };
         if (pricingWithSupplier.WdhSupplier) supplierNames.add(pricingWithSupplier.WdhSupplier.name);
@@ -132,12 +128,10 @@ export async function listAdminProducts(
       stockState: overallStock,
       seoComplete: !!(product.metaTitle?.trim() && product.metaDesc?.trim()),
       retailPrice: prices.length ? Math.min(...prices) : null,
-      salePercent,
     };
   });
 
   if (stock) products = products.filter((p) => p.stockState === stock);
-  if (onSale) products = products.filter((p) => p.salePercent != null);
   if (seoMissing) products = products.filter((p) => !p.seoComplete);
 
   const total = products.length;
@@ -193,8 +187,7 @@ export async function createAdminProduct(input: AdminProductCreateInput): Promis
         basePrice: input.retailPrice ?? null,
         discountPrice: null,
         per: input.unit,
-        stockCount: input.stockCount ?? 0,
-        stockStatus: (input.stockCount ?? 0) > 0 ? "instock" : "outofstock",
+        stockStatus: input.stockStatus ?? "in",
         thumbnail: null,
         thumbnailAlt: null,
         image1: null,

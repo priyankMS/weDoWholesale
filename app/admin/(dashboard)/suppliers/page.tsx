@@ -33,7 +33,7 @@ export default async function AdminSuppliersPage() {
         />
       </AdminPageHeader>
 
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
         <AdminTableCard>
           <table className="w-full text-left text-[14px]">
             <thead>

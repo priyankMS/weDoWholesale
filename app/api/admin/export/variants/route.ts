@@ -12,17 +12,17 @@ export async function GET(request: Request) {
   const category = searchParams.get("category") ?? undefined;
   const condition = searchParams.get("condition") ?? undefined;
   const bone = searchParams.get("bone") ?? undefined;
+  const fat = searchParams.get("fat") ?? undefined;
 
-  const { variants } = await listAdminVariants({ search, category, condition, bone, pageSize: 100_000 });
+  const { variants } = await listAdminVariants({ search, category, condition, bone, fat, pageSize: 100_000 });
 
   const header = [
     "SKU",
     "Parent Product",
     "Category",
     "Variant",
-    "Stock",
     "Stock State",
-    "Price",
+    "Wholesale Price",
     "Supplier(s)",
   ];
   const rows = variants.map((v) => [
@@ -30,9 +30,8 @@ export async function GET(request: Request) {
     v.productName,
     v.category,
     v.label,
-    v.stockCount,
     v.stockState,
-    v.basePrice != null ? v.basePrice.toFixed(2) : "",
+    v.price != null ? v.price.toFixed(2) : "",
     v.supplierNames.join("; "),
   ]);
 

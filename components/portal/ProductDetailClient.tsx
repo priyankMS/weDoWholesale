@@ -8,6 +8,7 @@ import { useSavedProducts } from "@/lib/hooks/useSavedProducts";
 import { QtyStepper } from "@/components/ui/QtyStepper";
 import { stockLabel } from "@/lib/format";
 import { categoryGradient, productIcon } from "@/lib/productVisuals";
+import { activeVariantDimensions, resolveDimensionSelection, type VariantDimensionKey } from "@/lib/variantDimensions";
 import type { ProductSummary } from "@/lib/db/queries/catalogue";
 
 export function ProductDetailClient({
@@ -24,17 +25,45 @@ export function ProductDetailClient({
   const showToast = useToast();
   const { addItem } = useCart();
   const { savedIds, toggle } = useSavedProducts();
-  const [selectedVariantId, setSelectedVariantId] = useState(
-    product.variants[0]?.id ?? null,
-  );
+
+  const activeDimensions = activeVariantDimensions(product.variants);
+
+  // Selections start from the first variant's own attributes, so the buy
+  // box always has a valid preview price rather than an empty state.
+  const [selections, setSelections] = useState<Record<string, string>>(() => {
+    const first = product.variants[0];
+    const init: Record<string, string> = {};
+    if (first) {
+      for (const d of activeDimensions) {
+        const val = first[d.key];
+        if (val) init[d.key] = val;
+      }
+    }
+    return init;
+  });
   const [qty, setQty] = useState(10);
   const [justAdded, setJustAdded] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
   const [checkedUrl, setCheckedUrl] = useState<string | null>(null);
 
   const saved = savedIds.has(product.id);
-  const selectedVariant =
-    product.variants.find((v) => v.id === selectedVariantId) ?? product.variants[0] ?? null;
+
+  const candidates = product.variants.filter((v) =>
+    activeDimensions.every((d) => {
+      const sel = selections[d.key];
+      return !sel || v[d.key] === sel;
+    }),
+  );
+  // When the dimension buttons above don't pin down a single SKU (leftover
+  // near-duplicate rows from the catalog import — same visible attributes,
+  // different SKU/supplier), just take the first match rather than surfacing
+  // a raw "Choose option" list of near-identical buttons to the buyer.
+  const selectedVariant = candidates[0] ?? product.variants[0] ?? null;
+
+  function selectDimension(key: VariantDimensionKey, value: string) {
+    setSelections((prev) => resolveDimensionSelection(product.variants, activeDimensions, prev, key, value));
+  }
+
   const price = selectedVariant ? selectedVariant.price : product.minPrice;
   const imageUrl = selectedVariant?.image ?? product.image;
   if (imageUrl !== checkedUrl) {
@@ -43,19 +72,24 @@ export function ProductDetailClient({
   }
   const showImage = !!imageUrl && !imgFailed;
 
-  // Only the real fields that actually exist and vary in wdh_variants —
-  // the mockup's spec table also had Origin, Slaughter method, Fat level
-  // and Min. order rows, but none of those exist as columns on
-  // wdh_products/wdh_variants (region/cuisine are always blank, and
-  // there's no slaughter-method, fat-level or min-order column at all),
-  // so they're left out rather than shown as fabricated placeholder text.
   const specRows = [
     { label: "Condition", value: selectedVariant?.conditionType },
+    { label: "Cut Style", value: selectedVariant?.cutType },
     { label: "Bone", value: selectedVariant?.boneType },
     { label: "Skin", value: selectedVariant?.skinType },
+    { label: "Fat level", value: selectedVariant?.fatLevel },
+    { label: "Origin", value: selectedVariant?.origin },
+    { label: "Supplier", value: selectedVariant?.supplierName },
     { label: "Category", value: product.category },
     { label: "Type", value: product.type },
     { label: "SKU", value: sku },
+    {
+      label: "Min Order Qty",
+      value:
+        selectedVariant?.minOrderQty != null
+          ? `${selectedVariant.minOrderQty} ${selectedVariant.minOrderUnit || ""}`.trim()
+          : null,
+    },
   ].filter((r) => r.value);
 
   function addToCart() {
@@ -164,29 +198,29 @@ export function ProductDetailClient({
             </div>
           )}
 
-          {product.variants.length > 1 && (
-            <div className="mt-3.5">
+          {activeDimensions.map((d) => (
+            <div key={d.key} className="mt-3.5">
               <div className="mb-2 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase">
-                Select cut
+                {d.label}
               </div>
               <div className="flex flex-wrap gap-1.75">
-                {product.variants.map((v) => (
+                {d.values.map((value) => (
                   <button
-                    key={v.id}
+                    key={value}
                     type="button"
-                    onClick={() => setSelectedVariantId(v.id)}
+                    onClick={() => selectDimension(d.key, value)}
                     className={`rounded-full border-[1.5px] px-3.25 py-1.75 text-[0.8rem] font-semibold ${
-                      v.id === selectedVariantId
+                      selections[d.key] === value
                         ? "border-primary-500 bg-primary-500 text-white"
                         : "border-neutral-200 bg-neutral-50 text-neutral-700"
                     }`}
                   >
-                    {v.label}
+                    {value}
                   </button>
                 ))}
               </div>
             </div>
-          )}
+          ))}
 
           {/* Desktop only — mobile uses the sticky bottom bar below instead,
               so this doesn't render twice on small screens. */}

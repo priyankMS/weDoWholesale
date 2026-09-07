@@ -1,14 +1,20 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getAdminOrderDetail } from "@/lib/db/queries/adminOrders";
+import { getAdminOrderDetail, getOrderRevisionView } from "@/lib/db/queries/adminOrders";
 import { OrderStatusSelect } from "@/components/admin/OrderStatusSelect";
-import { WeightAdjustmentTable } from "@/components/admin/WeightAdjustmentTable";
+import { OrderItemsEditTable } from "@/components/admin/OrderItemsEditTable";
+import { AddOrderItemForm } from "@/components/admin/AddOrderItemForm";
+import { OrderRevisionSummary } from "@/components/admin/OrderRevisionSummary";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { EmailInvoiceButton } from "@/components/admin/EmailInvoiceButton";
 import { User } from "@/lib/db/models/User";
-import { OrderItem } from "@/lib/db/models/OrderItem";
-import { OrderItemHistory } from "@/lib/db/models/OrderItemHistory";
+import { OrderItemHistory, type OrderItemAction } from "@/lib/db/models/OrderItemHistory";
 
-type WeightSnapshot = { quantity: number; unitPrice: number; totalPrice: number; note?: string | null };
+const ACTION_LABEL: Record<OrderItemAction, string> = {
+  added: "Added",
+  updated: "Substituted / quantity changed",
+  removed: "Removed",
+};
 
 export default async function AdminOrderDetailPage({
   params,
@@ -20,44 +26,35 @@ export default async function AdminOrderDetailPage({
   if (!order) notFound();
 
   const user = (order as typeof order & { User?: User }).User;
-  const items = (order as typeof order & { OrderItems?: OrderItem[] }).OrderItems ?? [];
+  const revision = await getOrderRevisionView(order.id);
 
-  const adjustmentHistory = await OrderItemHistory.findAll({
-    where: { orderId: order.id, action: "updated" },
+  const history = await OrderItemHistory.findAll({
+    where: { orderId: order.id },
     order: [["createdAt", "DESC"]],
   });
-  // adjustmentHistory is sorted newest-first, so the first entry seen per
-  // product here is its latest settled weight — used to prefill "Actual
-  // (kg)" and as the diff baseline going forward, while item.quantity
-  // (below) stays the untouched, originally-ordered weight for the
-  // "Ordered" column.
-  const latestActualByProduct = new Map<string, number>();
-  for (const h of adjustmentHistory) {
-    if (latestActualByProduct.has(h.productName)) continue;
-    try {
-      const after: WeightSnapshot = JSON.parse(h.snapshotAfter ?? "{}");
-      if (typeof after.quantity === "number") latestActualByProduct.set(h.productName, after.quantity);
-    } catch {
-      // leave unset — falls back to the ordered quantity below
-    }
-  }
-  const totalAdjustment = adjustmentHistory.reduce((sum, h) => {
-    try {
-      const before: WeightSnapshot = JSON.parse(h.snapshotBefore ?? "{}");
-      const after: WeightSnapshot = JSON.parse(h.snapshotAfter ?? "{}");
-      return sum + ((after.totalPrice ?? 0) - (before.totalPrice ?? 0));
-    } catch {
-      return sum;
-    }
-  }, 0);
 
   return (
     <div className="flex h-full flex-col">
       <AdminPageHeader title={`#${order.orderNumber}`} subtitle="Order Detail">
-        <OrderStatusSelect orderId={order.id} status={order.orderStatus} />
+        <div className="flex items-center gap-2">
+          <a
+            href={`/api/admin/orders/${order.id}/invoice?format=pdf`}
+            className="rounded-[5px] border border-[#d0ccc6] px-2.5 py-1.5 text-[13px] font-bold text-[#5a5450] hover:bg-[#f5f3f0]"
+          >
+            Download PDF
+          </a>
+          <a
+            href={`/api/admin/orders/${order.id}/invoice?format=xlsx`}
+            className="rounded-[5px] border border-[#d0ccc6] px-2.5 py-1.5 text-[13px] font-bold text-[#5a5450] hover:bg-[#f5f3f0]"
+          >
+            Download Excel
+          </a>
+          <EmailInvoiceButton orderId={order.id} />
+          <OrderStatusSelect orderId={order.id} status={order.orderStatus} />
+        </div>
       </AdminPageHeader>
 
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
         <Link href="/admin/orders" className="mb-4 inline-block text-[13px] font-bold text-[#e05a4a]">
           ← Back to Orders
         </Link>
@@ -68,76 +65,33 @@ export default async function AdminOrderDetailPage({
               <div className="border-b border-[#e4e1dc] px-4 py-3">
                 <div className="text-[14px] font-bold text-[#1a1816]">Order Items</div>
                 <p className="mt-0.5 text-[13px] text-[#9a9490]">
-                  Whole cuts don&apos;t always hit an exact weight. Enter the actual delivered weight
-                  to record the adjustment and email the customer — this does not touch the
-                  original invoice or charge/refund automatically.
+                  Edit a quantity, substitute a product, or add a new item — the order total, GST, and
+                  refund/due amount below update automatically and the customer is notified.
                 </p>
               </div>
               <div className="overflow-x-auto">
-                <WeightAdjustmentTable
-                  orderId={order.id}
-                  items={items.map((item) => ({
-                    id: item.id,
-                    productName: item.productName,
-                    sku: item.sku,
-                    quantity: Number(item.quantity),
-                    actualQuantity:
-                      latestActualByProduct.get(item.productName ?? "") ?? Number(item.quantity),
-                    unitPrice: Number(item.unitPrice),
-                    totalPrice: Number(item.totalPrice),
-                  }))}
-                />
+                <OrderItemsEditTable orderId={order.id} rows={revision?.rows ?? []} />
               </div>
+              <AddOrderItemForm orderId={order.id} />
             </div>
 
-            {adjustmentHistory.length > 0 && (
+            {history.length > 0 && (
               <div className="rounded-md border border-[#e4e1dc] bg-white">
-                <div className="flex items-center justify-between border-b border-[#e4e1dc] px-4 py-3">
-                  <div className="text-[14px] font-bold text-[#1a1816]">Weight Adjustment History</div>
-                  <div
-                    className={`text-[13px] font-bold ${
-                      totalAdjustment > 0
-                        ? "text-[#c48a00]"
-                        : totalAdjustment < 0
-                          ? "text-[#1e8a4a]"
-                          : "text-[#9a9490]"
-                    }`}
-                  >
-                    {totalAdjustment === 0
-                      ? "Settled — no net change"
-                      : totalAdjustment > 0
-                        ? `$${totalAdjustment.toFixed(2)} due from customer`
-                        : `$${Math.abs(totalAdjustment).toFixed(2)} owed to customer`}
-                  </div>
+                <div className="border-b border-[#e4e1dc] px-4 py-3">
+                  <div className="text-[14px] font-bold text-[#1a1816]">Revision Activity</div>
                 </div>
                 <div className="divide-y divide-[#e4e1dc]">
-                  {adjustmentHistory.map((h) => {
-                    let before: WeightSnapshot = { quantity: 0, unitPrice: 0, totalPrice: 0 };
-                    let after: WeightSnapshot = { quantity: 0, unitPrice: 0, totalPrice: 0 };
-                    try {
-                      before = JSON.parse(h.snapshotBefore ?? "{}");
-                      after = JSON.parse(h.snapshotAfter ?? "{}");
-                    } catch {
-                      // leave defaults
-                    }
-                    const diff = (after.totalPrice ?? 0) - (before.totalPrice ?? 0);
-                    return (
-                      <div key={h.id} className="px-4 py-2.5 text-[14px]">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-[#1a1816]">{h.productName}</span>
-                          <span
-                            className={`font-bold ${diff > 0 ? "text-[#c48a00]" : diff < 0 ? "text-[#1e8a4a]" : "text-[#9a9490]"}`}
-                          >
-                            {diff > 0 ? "+" : ""}${diff.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="text-[13px] text-[#9a9490]">
-                          {before.quantity}kg → {after.quantity}kg · {new Date(h.createdAt).toLocaleString()}
-                          {before.note ? ` · "${before.note}"` : ""}
-                        </div>
+                  {history.map((h) => (
+                    <div key={h.id} className="px-4 py-2.5 text-[14px]">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-[#1a1816]">{h.productName}</span>
+                        <span className="text-[12px] font-bold text-[#9a9490] uppercase">
+                          {ACTION_LABEL[h.action]}
+                        </span>
                       </div>
-                    );
-                  })}
+                      <div className="text-[13px] text-[#9a9490]">{new Date(h.createdAt).toLocaleString()}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -159,6 +113,14 @@ export default async function AdminOrderDetailPage({
               <div className="text-[14px] text-[#5a5450]">{order.timeSlot || "—"}</div>
               <div className="text-[14px] text-[#5a5450]">{order.shippingType || "—"}</div>
             </div>
+
+            {revision?.isRevised ? (
+              <OrderRevisionSummary
+                originalTotal={revision.originalTotal}
+                revisedTotal={revision.revisedTotal}
+                balanceAdjustment={revision.balanceAdjustment}
+              />
+            ) : null}
 
             <div className="rounded-md border border-[#e4e1dc] bg-white p-4">
               <div className="mb-2 text-[13px] font-bold tracking-wide text-[#9a9490] uppercase">Payment</div>

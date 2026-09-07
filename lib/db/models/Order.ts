@@ -53,6 +53,13 @@ export class Order extends Model<
   declare paidAt: CreationOptional<Date | null>;
   declare cardBrand: CreationOptional<string | null>;
   declare cardLast4: CreationOptional<string | null>;
+  // Snapshot of totalAmount/gstAmount/finalAmount taken the first time an
+  // order is revised (see recomputeOrderTotals in adminOrders.ts) — after
+  // that, the un-suffixed columns become the live/revised totals, and
+  // these are the only record of what the order originally added up to.
+  declare originalTotalAmount: CreationOptional<number | null>;
+  declare originalGstAmount: CreationOptional<number | null>;
+  declare originalFinalAmount: CreationOptional<number | null>;
 }
 
 Order.init(
@@ -105,6 +112,21 @@ Order.init(
     paidAt: { type: DataTypes.DATE, allowNull: true, field: "paid_at" },
     cardBrand: { type: DataTypes.STRING(30), allowNull: true, field: "card_brand" },
     cardLast4: { type: DataTypes.STRING(4), allowNull: true, field: "card_last4" },
+    originalTotalAmount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      field: "original_total_amount",
+    },
+    originalGstAmount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      field: "original_gst_amount",
+    },
+    originalFinalAmount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      field: "original_final_amount",
+    },
   },
   {
     sequelize,

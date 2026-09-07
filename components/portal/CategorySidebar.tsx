@@ -40,6 +40,7 @@ export function CategorySidebar({
   categories,
   activeSlug,
   conditionOptions,
+  cutOptions,
   boneOptions,
   skinOptions,
   filters,
@@ -48,13 +49,14 @@ export function CategorySidebar({
   categories: CategorySummary[];
   activeSlug: string;
   conditionOptions: string[];
+  cutOptions: string[];
   boneOptions: string[];
   skinOptions: string[];
   filters: FilterState;
   onChange: (next: FilterState) => void;
 }) {
   return (
-    <aside className="hidden w-56 shrink-0 lg:block">
+    <aside className="hidden w-56 shrink-0 lg:block lg:self-stretch">
       <div className="sticky top-24 space-y-5">
         <div>
           <div className="mb-2.5 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase">
@@ -103,6 +105,20 @@ export function CategorySidebar({
                 label={c}
                 checked={filters.condition.includes(c)}
                 onChange={() => onChange({ ...filters, condition: toggle(filters.condition, c) })}
+              />
+            ))}
+          </div>
+        )}
+
+        {cutOptions.length > 0 && (
+          <div className="border-t border-neutral-200 pt-3.5">
+            <div className="mb-1.5 text-[0.7rem] font-extrabold text-neutral-900">Cut Style</div>
+            {cutOptions.map((c) => (
+              <CheckRow
+                key={c}
+                label={c}
+                checked={filters.cut.includes(c)}
+                onChange={() => onChange({ ...filters, cut: toggle(filters.cut, c) })}
               />
             ))}
           </div>

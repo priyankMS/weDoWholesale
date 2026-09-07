@@ -23,6 +23,7 @@ const EMPTY_FACETS = {
   types: [] as string[],
   typeCounts: {} as Record<string, number>,
   condition: [] as string[],
+  cut: [] as string[],
   bone: [] as string[],
   skin: [] as string[],
 };
@@ -46,6 +47,17 @@ export function ProductListing({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const filtersKey = JSON.stringify(filters);
   const chipDragStart = useRef<{ x: number; y: number } | null>(null);
+  const chipScrollRef = useRef<HTMLDivElement>(null);
+  const [chipFade, setChipFade] = useState({ left: false, right: false });
+
+  const updateChipFade = () => {
+    const el = chipScrollRef.current;
+    if (!el) return;
+    setChipFade({
+      left: el.scrollLeft > 4,
+      right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4,
+    });
+  };
 
   const getKey = (pageIndex: number, previous: ProductPageResult | null): ProductPageParams | null => {
     if (previous && !previous.hasMore) return null;
@@ -54,6 +66,7 @@ export function ProductListing({
       q: debouncedSearch,
       type: part,
       condition: filters.condition,
+      cut: filters.cut,
       bone: filters.bone,
       skin: filters.skin,
       stock: filters.stock,
@@ -89,6 +102,10 @@ export function ProductListing({
   const hasMore = data ? (data[data.length - 1]?.hasMore ?? false) : false;
   const activeCount = countActiveFilters(filters);
 
+  useEffect(() => {
+    updateChipFade();
+  }, [facets.types]);
+
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!hasMore || showSkeleton) return;
@@ -110,6 +127,7 @@ export function ProductListing({
         categories={categories}
         activeSlug={activeSlug}
         conditionOptions={facets.condition}
+        cutOptions={facets.cut}
         boneOptions={facets.bone}
         skinOptions={facets.skin}
         filters={filters}
@@ -117,7 +135,7 @@ export function ProductListing({
       />
 
       <div className="min-w-0 lg:flex-1">
-        <div className="px-4 pt-3 pb-2 lg:px-0">
+        <div className="bg-neutral-50 px-4 pt-3 pb-2 lg:sticky lg:top-18 lg:z-30 lg:px-0">
           <div className="relative">
             <span className="absolute top-1/2 left-3.5 -translate-y-1/2 text-[1rem] text-neutral-400">
               🔍
@@ -138,7 +156,12 @@ export function ProductListing({
         </div>
 
         {facets.types.length > 1 && (
-          <div className="scrollbar-none mb-2 flex gap-1.75 overflow-x-auto px-4 pb-0.5 lg:px-0">
+          <div className="relative mb-2">
+            <div
+              ref={chipScrollRef}
+              onScroll={updateChipFade}
+              className="scroll-visible flex gap-1.75 overflow-x-auto px-4 pb-2 lg:px-0"
+            >
             {["All", ...facets.types].map((p) => {
               const count = p === "All" ? total : (facets.typeCounts[p] ?? 0);
               return (
@@ -163,6 +186,19 @@ export function ProductListing({
                 </button>
               );
             })}
+            </div>
+            <div
+              aria-hidden
+              className={`pointer-events-none absolute top-0 bottom-2 left-0 w-6 bg-gradient-to-r from-neutral-50 to-transparent transition-opacity ${
+                chipFade.left ? "opacity-100" : "opacity-0"
+              }`}
+            />
+            <div
+              aria-hidden
+              className={`pointer-events-none absolute top-0 right-0 bottom-2 w-8 bg-gradient-to-l from-neutral-50 to-transparent transition-opacity ${
+                chipFade.right ? "opacity-100" : "opacity-0"
+              }`}
+            />
           </div>
         )}
 
@@ -291,6 +327,7 @@ export function ProductListing({
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
           conditionOptions={facets.condition}
+          cutOptions={facets.cut}
           boneOptions={facets.bone}
           skinOptions={facets.skin}
           filters={filters}

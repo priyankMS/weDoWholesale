@@ -3,7 +3,7 @@ import { getAdminSession } from "@/lib/auth/adminSession";
 import { User } from "@/lib/db/models/User";
 import { adminCustomerStatusUpdateSchema } from "@/lib/validation/adminCustomers";
 import { welcomeEmail } from "@/lib/email/templates/welcome";
-import { sendEmail } from "@/lib/email/send";
+import { enqueueEmail } from "@/lib/queue/emailQueue";
 
 export async function PATCH(
   request: Request,
@@ -35,7 +35,7 @@ export async function PATCH(
       accountId: user.id,
       deliveryArea: user.city ?? undefined,
     });
-    await sendEmail({ to: user.email, subject: email.subject, html: email.html, text: email.text });
+    await enqueueEmail({ to: user.email, subject: email.subject, html: email.html, text: email.text });
   }
 
   return NextResponse.json({ user });

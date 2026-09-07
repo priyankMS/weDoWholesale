@@ -85,7 +85,7 @@ export function SupplierModal({
                 <label className={labelClass}>Contact Name</label>
                 <input {...register("contactName")} className={inputClass} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className={labelClass}>Phone</label>
                   <input {...register("phone")} className={inputClass} />
@@ -95,7 +95,7 @@ export function SupplierModal({
                   <input {...register("email")} className={inputClass} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className={labelClass}>Payment Terms</label>
                   <input {...register("paymentTerms")} placeholder="Net-30" className={inputClass} />

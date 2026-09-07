@@ -12,13 +12,16 @@ export function AdminPageHeader({
   children?: ReactNode;
 }) {
   return (
-    <div className="flex h-11 shrink-0 items-center gap-3.5 bg-[#141312] px-5">
+    <div className="flex shrink-0 flex-wrap items-center gap-x-3.5 gap-y-2 bg-[#141312] px-4 py-2.5 sm:px-5">
       <div className="font-[family-name:var(--font-plex-mono)] text-[14px] font-semibold text-white">
         {title}
       </div>
-      <div className="text-[13px] text-[#5a5450]">{subtitle}</div>
-      <div className="flex-1" />
-      {children}
+      <div className="hidden text-[13px] text-[#5a5450] sm:block">{subtitle}</div>
+      {children && (
+        <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
@@ -40,14 +43,14 @@ export function AdminHeaderSearch({
   children?: ReactNode;
 }) {
   return (
-    <form action={action} method="GET" className="flex items-center gap-1.5">
+    <form action={action} method="GET" className="flex w-full items-center gap-1.5 sm:w-auto">
       {children}
       <input
         type="text"
         name={name}
         defaultValue={defaultValue ?? ""}
         placeholder={placeholder}
-        className="w-56 rounded-md border border-[#2e2c2a] bg-[#1e1c1a] px-2.5 py-1.5 text-[14px] text-[#ccc] outline-none placeholder:text-[#5a5450] focus:border-[#e05a4a]"
+        className="w-full min-w-0 flex-1 rounded-md border border-[#2e2c2a] bg-[#1e1c1a] px-2.5 py-1.5 text-[14px] text-[#ccc] outline-none placeholder:text-[#5a5450] focus:border-[#e05a4a] sm:w-56 sm:flex-none"
       />
     </form>
   );

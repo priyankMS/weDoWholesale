@@ -24,6 +24,13 @@ export class OrderItemHistory extends Model<
   declare snapshotBefore: string | null;
   declare snapshotAfter: string | null;
   declare createdAt: CreationOptional<Date>;
+  // Reliable per-line linkage for the revision engine (addOrderItem /
+  // updateOrderItem in adminOrders.ts) — the orderId+productName matching
+  // above breaks once an item is substituted to a different product.
+  // Deliberately no FK: rows are never hard-deleted, so this never dangles,
+  // but a loose column avoids blocking any future cleanup. Old rows (before
+  // this column existed) stay null and keep using the productName match.
+  declare orderItemId: CreationOptional<number | null>;
 }
 
 OrderItemHistory.init(
@@ -36,6 +43,7 @@ OrderItemHistory.init(
     snapshotBefore: { type: DataTypes.TEXT("long"), allowNull: true, field: "snapshot_before" },
     snapshotAfter: { type: DataTypes.TEXT("long"), allowNull: true, field: "snapshot_after" },
     createdAt: { type: DataTypes.DATE, field: "created_at" },
+    orderItemId: { type: DataTypes.INTEGER, allowNull: true, field: "order_item_id" },
   },
   {
     sequelize,

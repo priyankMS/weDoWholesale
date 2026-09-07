@@ -459,7 +459,13 @@ export function CheckoutClient({
             Select payment method
           </div>
           <div className="mb-4 grid grid-cols-2 gap-2.5">
-            {PAYMENT_OPTIONS.map((opt) => (
+            {/* "Invoice (COD)" duplicated "Cash on delivery" from the
+                buyer's point of view (both pay-on-delivery, no card) —
+                dropped from the choices shown here. The "invoice" value
+                itself stays in PAYMENT_OPTIONS/the DB schema since it's
+                still a valid historical order state (lib/db/queries/account.ts
+                groups it with net_terms for the Invoices summary). */}
+            {PAYMENT_OPTIONS.filter((opt) => opt !== "invoice").map((opt) => (
               <button
                 key={opt}
                 type="button"

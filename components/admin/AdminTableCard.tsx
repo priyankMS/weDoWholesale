@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 // .table-wrap/thead so every table across the admin renders identically.
 export function AdminTableCard({ children }: { children: ReactNode }) {
   return (
-    <div className="max-h-[calc(100vh-260px)] overflow-auto rounded-md border border-[#e4e1dc] bg-white [&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10 [&_thead>tr]:bg-[#f0ede9]">
+    <div className="max-h-[calc(100vh-360px)] overflow-auto rounded-md border border-[#e4e1dc] bg-white sm:max-h-[calc(100vh-260px)] [&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10 [&_thead>tr]:bg-[#f0ede9]">
       {children}
     </div>
   );

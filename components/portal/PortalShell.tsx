@@ -21,7 +21,7 @@ export function PortalShell({
       <CartProvider>
         <div className="min-h-screen bg-neutral-50">
           <TopNav businessName={businessName} city={city} hasUnread={hasUnreadMessages} />
-          <main className="mx-auto flex max-w-6xl flex-col pb-24 lg:h-[calc(100vh-4.5rem)] lg:overflow-y-auto lg:pb-12">
+          <main className="mx-auto flex max-w-6xl flex-col pb-24 lg:pb-12">
             <div className="flex-1">{children}</div>
             <PortalFooter />
           </main>

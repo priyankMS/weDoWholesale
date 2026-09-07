@@ -1,16 +1,16 @@
-import Link from "next/link";
 import { listAdminPricing, listVariantsWithoutPricing } from "@/lib/db/queries/adminPricing";
 import { getAdminProductCategories } from "@/lib/db/queries/adminProducts";
 import { WdhSupplier } from "@/lib/db/models/WdhSupplier";
 import { PricingRow } from "@/components/admin/PricingRow";
 import { NewPricingRow } from "@/components/admin/NewPricingRow";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminPageHeader, AdminHeaderGhostLink } from "@/components/admin/AdminPageHeader";
 import { AdminToolbar, AdminFilterSelect, AdminToolbarSpacer, AdminCountBadge } from "@/components/admin/AdminToolbar";
 
 const PAGE_SIZE = 25;
 
-const PRICING_HEADERS = ["SKU", "Product", "Variant", "Supplier", "Dealer Price", "Markup $", "Retail Price", "Margin"];
+const PRICING_HEADERS = ["SKU", "Product", "Variant", "Supplier", "Dealer Price", "Markup $", "Wholesale Price", "Margin"];
 
 export default async function AdminPricingPage({
   searchParams,
@@ -50,7 +50,7 @@ export default async function AdminPricingPage({
         </AdminHeaderGhostLink>
       </AdminPageHeader>
 
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
         <form method="get" action="/admin/pricing">
           <AdminToolbar>
             <AdminFilterSelect name="category" defaultValue={sp.category ?? "All"}>
@@ -107,23 +107,7 @@ export default async function AdminPricingPage({
           </table>
         </AdminTableCard>
 
-        {totalPages > 1 && (
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <Link
-                key={p}
-                href={pageHref(p)}
-                className={`rounded-md px-3 py-1.5 text-[13px] font-bold ${
-                  p === page
-                    ? "bg-[#e05a4a] text-white"
-                    : "border border-[#e4e1dc] bg-white text-[#5a5450] hover:bg-[#f0ede9]"
-                }`}
-              >
-                {p}
-              </Link>
-            ))}
-          </div>
-        )}
+        <AdminPagination page={page} totalPages={totalPages} pageHref={pageHref} />
 
         {variantsWithoutPricing.length > 0 && (
           <div className="mt-8">
@@ -139,7 +123,7 @@ export default async function AdminPricingPage({
               <table className="w-full text-left text-[14px]">
                 <thead>
                   <tr className="bg-[#f0ede9]">
-                    {["SKU", "Product", "Variant", "Supplier", "Dealer Price", "Markup $", "Retail Price"].map((h) => (
+                    {["SKU", "Product", "Variant", "Supplier", "Dealer Price", "Markup $", "Wholesale Price"].map((h) => (
                       <th key={h} className="px-2.5 py-1.5 text-[13px] font-semibold tracking-wide text-[#5a5450] uppercase">
                         {h}
                       </th>

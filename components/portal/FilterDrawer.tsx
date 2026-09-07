@@ -4,6 +4,7 @@ import type { StockState } from "@/lib/db/queries/catalogue";
 
 export type FilterState = {
   condition: string[];
+  cut: string[];
   bone: string[];
   skin: string[];
   stock: StockState[];
@@ -13,6 +14,7 @@ export type FilterState = {
 
 export const EMPTY_FILTERS: FilterState = {
   condition: [],
+  cut: [],
   bone: [],
   skin: [],
   stock: [],
@@ -21,7 +23,7 @@ export const EMPTY_FILTERS: FilterState = {
 };
 
 export function countActiveFilters(f: FilterState): number {
-  let n = f.condition.length + f.bone.length + f.skin.length + f.stock.length;
+  let n = f.condition.length + f.cut.length + f.bone.length + f.skin.length + f.stock.length;
   if (f.priceMin != null || f.priceMax != null) n++;
   return n;
 }
@@ -55,17 +57,18 @@ function Chip({
 }
 
 // Facet options are derived from what's actually queryable in the real
-// wdh_variants data (condition, bone, skin, price, stock) — the mockup's
-// filter drawer also had "Slaughter method", "Origin" and "Cuisine"
-// sections, but wdh_products.region/cuisine are blank on every row and
-// there's no slaughter-method column at all in the current schema, so
-// those facets are left out rather than shipped as filters that would
+// wdh_variants data (condition, cut style, bone, skin, price, stock) — the
+// mockup's filter drawer also had "Slaughter method", "Origin" and
+// "Cuisine" sections, but wdh_products.region/cuisine are blank on every
+// row and there's no slaughter-method column at all in the current schema,
+// so those facets are left out rather than shipped as filters that would
 // always return zero results. See the query layer notes in
 // lib/db/queries/catalogue.ts for details.
 export function FilterDrawer({
   open,
   onClose,
   conditionOptions,
+  cutOptions,
   boneOptions,
   skinOptions,
   filters,
@@ -74,6 +77,7 @@ export function FilterDrawer({
   open: boolean;
   onClose: () => void;
   conditionOptions: string[];
+  cutOptions: string[];
   boneOptions: string[];
   skinOptions: string[];
   filters: FilterState;
@@ -120,6 +124,24 @@ export function FilterDrawer({
                   onClick={() =>
                     onChange({ ...filters, condition: toggle(filters.condition, c) })
                   }
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {cutOptions.length > 0 && (
+          <div className="border-t border-neutral-200 px-4.5 pt-3.5">
+            <div className="mb-2.5 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase">
+              Cut Style
+            </div>
+            <div className="mb-3.5 flex flex-wrap gap-1.75">
+              {cutOptions.map((c) => (
+                <Chip
+                  key={c}
+                  label={c}
+                  active={filters.cut.includes(c)}
+                  onClick={() => onChange({ ...filters, cut: toggle(filters.cut, c) })}
                 />
               ))}
             </div>

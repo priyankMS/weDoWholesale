@@ -7,6 +7,7 @@ import { useCart } from "@/lib/cart/CartContext";
 import { QtyStepper } from "@/components/ui/QtyStepper";
 import { stockLabel, variantLabel } from "@/lib/format";
 import { categoryGradient, productIcon } from "@/lib/productVisuals";
+import { activeVariantDimensions, resolveDimensionSelection, type VariantDimensionKey } from "@/lib/variantDimensions";
 import type { ProductSummary } from "@/lib/db/queries/catalogue";
 
 type Layout = "grid" | "list";
@@ -33,14 +34,43 @@ export function ProductCard({
   const showToast = useToast();
   const { addItem } = useCart();
   const [expanded, setExpanded] = useState(false);
-  const [selectedVariantId, setSelectedVariantId] = useState(
-    product.variants[0]?.id ?? null,
-  );
   const [qty, setQty] = useState(10);
   const [justAdded, setJustAdded] = useState(false);
 
-  const selectedVariant =
-    product.variants.find((v) => v.id === selectedVariantId) ?? product.variants[0] ?? null;
+  // Same per-attribute picker as the product detail page's buy box (and the
+  // client's reference design) — Condition / Cut Style / Bone / Skin / Fat /
+  // Origin each as their own button group, rather than one flat button per
+  // full SKU label, so the price updates as the buyer narrows down their
+  // exact combination instead of having to recognize it in a wall of text.
+  const activeDimensions = activeVariantDimensions(product.variants);
+
+  const [selections, setSelections] = useState<Record<string, string>>(() => {
+    const first = product.variants[0];
+    const init: Record<string, string> = {};
+    if (first) {
+      for (const d of activeDimensions) {
+        const val = first[d.key];
+        if (val) init[d.key] = val;
+      }
+    }
+    return init;
+  });
+  const candidates = product.variants.filter((v) =>
+    activeDimensions.every((d) => {
+      const sel = selections[d.key];
+      return !sel || v[d.key] === sel;
+    }),
+  );
+  // When the dimension buttons above don't pin down a single SKU (leftover
+  // near-duplicate rows from the catalog import — same visible attributes,
+  // different SKU/supplier), just take the first match rather than surfacing
+  // a raw "Choose option" list of near-identical buttons to the buyer.
+  const selectedVariant = candidates[0] ?? product.variants[0] ?? null;
+
+  function selectDimension(key: VariantDimensionKey, value: string) {
+    setSelections((prev) => resolveDimensionSelection(product.variants, activeDimensions, prev, key, value));
+  }
+
   const displayPrice = selectedVariant ? selectedVariant.price : product.minPrice;
   const meta = selectedVariant ? variantLabel(selectedVariant) : null;
   const metaLine = meta && meta !== "Standard" ? meta : product.type;
@@ -166,30 +196,29 @@ export function ProductCard({
 
   const expandPanel = expandable && expanded && (
     <div className="border-t border-neutral-200 px-3.5 pt-3 pb-3.5">
-      {product.variants.length > 0 && (
-        <>
+      {activeDimensions.map((d) => (
+        <div key={d.key} className="mb-3">
           <div className="mb-2 text-[0.66rem] font-extrabold tracking-wide text-neutral-400 uppercase">
-            Select cut
+            {d.label}
           </div>
-          <div className="mb-3 flex flex-wrap gap-1.75">
-            {product.variants.map((v) => (
+          <div className="flex flex-wrap gap-1.75">
+            {d.values.map((value) => (
               <button
-                key={v.id}
+                key={value}
                 type="button"
-                onClick={() => setSelectedVariantId(v.id)}
+                onClick={() => selectDimension(d.key, value)}
                 className={`rounded-full border-[1.5px] px-3 py-1.5 text-[0.78rem] font-semibold ${
-                  v.id === selectedVariantId
+                  selections[d.key] === value
                     ? "border-primary-500 bg-primary-500 text-white"
                     : "border-neutral-200 bg-neutral-50 text-neutral-700"
                 }`}
               >
-                {v.label}
-                {v.price != null ? ` · $${v.price.toFixed(2)}` : ""}
+                {value}
               </button>
             ))}
           </div>
-        </>
-      )}
+        </div>
+      ))}
 
       <div className="flex items-center gap-2.5">
         <QtyStepper value={qty} onChange={setQty} />
@@ -197,7 +226,7 @@ export function ProductCard({
           type="button"
           onClick={addToCart}
           disabled={displayPrice == null}
-          className={`h-10.5 flex-1 rounded-[10px] text-[0.88rem] font-extrabold text-white transition-colors disabled:cursor-not-allowed disabled:bg-neutral-300 ${
+          className={`h-10.5 flex-1 rounded-[10px] text-[0.88rem] font-extrabold text-white transition-colors disabled:cursor-not-allowed disabled:bg-neutral-300 xl:max-w-52 ${
             justAdded ? "bg-green-600" : "bg-primary-500 hover:bg-primary-600"
           }`}
         >

@@ -10,7 +10,7 @@ export default async function AdminSettingsPage() {
     <div className="flex h-full flex-col">
       <AdminPageHeader title="Settings" subtitle="Platform-wide pricing and delivery defaults" />
 
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
         <SettingsForm
           defaultValues={{
             default_markup_percent: Number(settings.default_markup_percent ?? 15),

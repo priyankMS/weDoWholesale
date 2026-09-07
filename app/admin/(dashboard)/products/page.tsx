@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { listAdminProducts, getAdminProductCategories } from "@/lib/db/queries/adminProducts";
 import { WdhSupplier } from "@/lib/db/models/WdhSupplier";
 import { ProductsTable } from "@/components/admin/ProductsTable";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminPageHeader, AdminHeaderSearch, AdminHeaderGhostLink, AdminHeaderPrimaryLink } from "@/components/admin/AdminPageHeader";
 import {
   AdminToolbar,
@@ -24,7 +24,6 @@ export default async function AdminProductsPage({
     category?: string;
     supplier?: string;
     stock?: StockState;
-    onSale?: string;
     seoMissing?: string;
     page?: string;
   }>;
@@ -40,7 +39,6 @@ export default async function AdminProductsPage({
       category,
       supplierId,
       stock: sp.stock,
-      onSale: sp.onSale === "1",
       seoMissing: sp.seoMissing === "1",
       page,
       pageSize: PAGE_SIZE,
@@ -57,7 +55,6 @@ export default async function AdminProductsPage({
     if (sp.category) params.set("category", sp.category);
     if (sp.supplier) params.set("supplier", sp.supplier);
     if (sp.stock) params.set("stock", sp.stock);
-    if (sp.onSale === "1") params.set("onSale", "1");
     if (sp.seoMissing === "1") params.set("seoMissing", "1");
     return params;
   }
@@ -68,7 +65,7 @@ export default async function AdminProductsPage({
     return `/admin/products?${params.toString()}`;
   }
 
-  function chipHref(key: "onSale" | "seoMissing" | "stock", value: string) {
+  function chipHref(key: "seoMissing" | "stock", value: string) {
     const params = baseParams();
     const isActive = params.get(key) === value;
     params.delete(key);
@@ -85,12 +82,11 @@ export default async function AdminProductsPage({
         <AdminHeaderPrimaryLink href="/admin/products/new">+ Add Product</AdminHeaderPrimaryLink>
       </AdminPageHeader>
 
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
         <form method="get" action="/admin/products">
           <input type="hidden" name="q" value={sp.q ?? ""} />
           {sp.supplier && <input type="hidden" name="supplier" value={sp.supplier} />}
           {sp.stock && <input type="hidden" name="stock" value={sp.stock} />}
-          {sp.onSale === "1" && <input type="hidden" name="onSale" value="1" />}
           {sp.seoMissing === "1" && <input type="hidden" name="seoMissing" value="1" />}
           <AdminToolbar>
             <AdminFilterSelect name="category" defaultValue={sp.category ?? "All"}>
@@ -126,9 +122,6 @@ export default async function AdminProductsPage({
             <AdminChipLink active={sp.seoMissing === "1"} href={chipHref("seoMissing", "1")}>
               Missing
             </AdminChipLink>
-            <AdminChipLink active={sp.onSale === "1"} href={chipHref("onSale", "1")}>
-              On Sale
-            </AdminChipLink>
             <AdminChipLink active={sp.stock === "low"} href={chipHref("stock", "low")}>
               Low Stock
             </AdminChipLink>
@@ -139,23 +132,7 @@ export default async function AdminProductsPage({
 
         <ProductsTable products={products} />
 
-        {totalPages > 1 && (
-          <div className="mt-4 flex items-center justify-center gap-1.5">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <Link
-                key={p}
-                href={pageHref(p)}
-                className={`rounded-md px-3 py-1.5 text-[13px] font-bold ${
-                  p === page
-                    ? "bg-[#e05a4a] text-white"
-                    : "border border-[#e4e1dc] bg-white text-[#5a5450] hover:bg-[#f0ede9]"
-                }`}
-              >
-                {p}
-              </Link>
-            ))}
-          </div>
-        )}
+        <AdminPagination page={page} totalPages={totalPages} pageHref={pageHref} />
       </div>
     </div>
   );

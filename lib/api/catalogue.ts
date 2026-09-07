@@ -20,6 +20,7 @@ export type ProductPageParams = {
   q?: string;
   type?: string;
   condition?: string[];
+  cut?: string[];
   bone?: string[];
   skin?: string[];
   stock?: StockState[];
@@ -49,6 +50,7 @@ export async function fetchProductPage(params: ProductPageParams): Promise<Produ
   if (params.q?.trim()) sp.set("q", params.q.trim());
   if (params.type && params.type !== "All") sp.set("type", params.type);
   if (params.condition?.length) sp.set("condition", params.condition.join(","));
+  if (params.cut?.length) sp.set("cut", params.cut.join(","));
   if (params.bone?.length) sp.set("bone", params.bone.join(","));
   if (params.skin?.length) sp.set("skin", params.skin.join(","));
   if (params.stock?.length) sp.set("stock", params.stock.join(","));

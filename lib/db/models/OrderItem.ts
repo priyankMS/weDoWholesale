@@ -22,6 +22,14 @@ export class OrderItem extends Model<
   declare quantity: CreationOptional<number>;
   declare unitPrice: number;
   declare totalPrice: number;
+  // Snapshotted from WdhProduct.category / WdhVariant.conditionType at
+  // add-time (same reasoning as productName/sku above) — used by the
+  // revision invoice's Category/Condition columns.
+  declare category: CreationOptional<string | null>;
+  declare conditionType: CreationOptional<string | null>;
+  // Snapshotted at add-time from catalogue.ts's unitFor() (kg/lb/pack/unit)
+  // — same reasoning as category/conditionType above.
+  declare unit: CreationOptional<string | null>;
 }
 
 OrderItem.init(
@@ -35,6 +43,9 @@ OrderItem.init(
     quantity: { type: DataTypes.DECIMAL(10, 3), allowNull: false, defaultValue: 1 },
     unitPrice: { type: DataTypes.DECIMAL(10, 2), allowNull: false, field: "unit_price" },
     totalPrice: { type: DataTypes.DECIMAL(10, 2), allowNull: false, field: "total_price" },
+    category: { type: DataTypes.STRING(100), allowNull: true },
+    conditionType: { type: DataTypes.STRING(50), allowNull: true, field: "condition_type" },
+    unit: { type: DataTypes.STRING(20), allowNull: true },
   },
   {
     sequelize,

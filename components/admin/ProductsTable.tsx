@@ -16,8 +16,7 @@ const HEADERS = [
   "Supplier(s)",
   "Stock",
   "SEO",
-  "Retail Price",
-  "Sale",
+  "Wholesale Price",
 ];
 
 export function ProductsTable({ products }: { products: AdminProductRow[] }) {
@@ -125,9 +124,6 @@ export function ProductsTable({ products }: { products: AdminProductRow[] }) {
                 </td>
                 <td className="px-2.5 py-1.5 font-[family-name:var(--font-plex-mono)] font-bold text-[#c04535]">
                   {p.retailPrice != null ? `$${p.retailPrice.toFixed(2)}` : "—"}
-                </td>
-                <td className="px-2.5 py-1.5">
-                  {p.salePercent != null && <AdminBadge tone="amber">-{p.salePercent}%</AdminBadge>}
                 </td>
                 <td className="px-2.5 py-1.5 text-right" onClick={(e) => e.stopPropagation()}>
                   <button

@@ -7,12 +7,19 @@ import nodemailer, { type Transporter } from "nodemailer";
 // app/api/auth/forgot-password/route.ts, which only ever console.logged
 // the reset link locally. When SMTP_HOST isn't set, sendEmail falls back
 // to that same console.log so local dev keeps working without any setup.
+export type SendEmailAttachment = {
+  filename: string;
+  content: string; // base64-encoded — JSON/queue-safe, unlike a raw Buffer
+  contentType?: string;
+};
+
 export type SendEmailInput = {
   to: string;
   subject: string;
   html: string;
   text?: string;
   from?: string;
+  attachments?: SendEmailAttachment[];
 };
 
 let cachedTransporter: Transporter | null | undefined;
@@ -45,8 +52,11 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
     // No SMTP_HOST configured — log instead of failing so registration,
     // password reset, etc. keep working in local dev without any mail
     // provider set up.
+    const attachmentNote = input.attachments?.length
+      ? ` (+ ${input.attachments.length} attachment${input.attachments.length === 1 ? "" : "s"}: ${input.attachments.map((a) => a.filename).join(", ")})`
+      : "";
     console.log(
-      `[email] SMTP not configured — would send "${input.subject}" to ${input.to}\n${input.text ?? "(no plain-text body)"}`,
+      `[email] SMTP not configured — would send "${input.subject}" to ${input.to}${attachmentNote}\n${input.text ?? "(no plain-text body)"}`,
     );
     return;
   }
@@ -57,5 +67,10 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
     subject: input.subject,
     html: input.html,
     text: input.text,
+    attachments: input.attachments?.map((a) => ({
+      filename: a.filename,
+      content: Buffer.from(a.content, "base64"),
+      contentType: a.contentType,
+    })),
   });
 }

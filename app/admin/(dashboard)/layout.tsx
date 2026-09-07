@@ -36,7 +36,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
 
   return (
     <div
-      className={`${plexSans.variable} ${plexMono.variable} flex h-screen bg-[#f7f5f2] font-[family-name:var(--font-plex-sans)]`}
+      className={`${plexSans.variable} ${plexMono.variable} flex h-screen flex-col bg-[#f7f5f2] font-[family-name:var(--font-plex-sans)] md:flex-row`}
     >
       <AdminSidebar
         name={session.name}

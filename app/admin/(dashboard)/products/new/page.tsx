@@ -22,7 +22,7 @@ export default async function AdminProductNewPage() {
     <div className="flex h-full flex-col">
       <AdminPageHeader title="New Product" subtitle="Create a product with its first variant and pricing" />
 
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
         <Link href="/admin/products" className="mb-4 inline-block text-[13px] font-bold text-[#e05a4a]">
           ← Back to Products
         </Link>

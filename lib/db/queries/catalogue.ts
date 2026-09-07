@@ -16,13 +16,14 @@ export const CATEGORY_ICONS: Record<string, string> = {
   Lamb: "🐑",
   Goat: "🐐",
   Fish: "🐟",
+  Turkey: "🦃",
   Drinks: "🧃",
   Groceries: "🛒",
   Snacks: "🍿",
   Desserts: "🍰",
 };
 
-const MEAT_CATEGORIES = new Set(["Beef", "Chicken", "Lamb", "Goat", "Fish"]);
+const MEAT_CATEGORIES = new Set(["Beef", "Chicken", "Lamb", "Goat", "Fish", "Turkey"]);
 
 // A handful of obviously junk rows left over in the imported staging data
 // ("beef test", "chicken test", "lamb test", "Fish test") — filtered out
@@ -39,20 +40,27 @@ export function categoryFromSlug(slug: string, categories: string[]): string | n
 
 export type StockState = "in" | "low" | "out";
 
-// All 267 real variant rows currently carry stock_count = 100 (the staging
-// import doesn't yet reflect live inventory) — this threshold is written
-// generically so low/out-of-stock badges activate correctly once real
-// inventory numbers start flowing in, rather than being hardcoded to the
-// current (uniform) snapshot.
-const LOW_STOCK_THRESHOLD = 20;
-
-export function stockStateFor(stockCount: number | null): StockState {
-  const n = stockCount ?? 0;
-  if (n <= 0) return "out";
-  if (n <= LOW_STOCK_THRESHOLD) return "low";
+// Stock is managed directly by status (admin picks In/Low/Out per variant),
+// not derived from a quantity number — the source CSV's "Stock Count" was a
+// uniform placeholder (1 for every one of the 241 rows), not a real
+// inventory count, so thresholding on it made every single variant show as
+// "low stock" regardless of actual availability. wdh_variants.stock_status
+// defaults to "instock" from that same import; anything not recognized
+// below falls back to "in" rather than a false "low"/"out".
+export function stockStateFor(stockStatus: string | null | undefined): StockState {
+  const s = (stockStatus ?? "").trim().toLowerCase();
+  if (s === "low" || s === "lowstock" || s === "low_stock") return "low";
+  if (s === "out" || s === "outofstock" || s === "out_of_stock") return "out";
   return "in";
 }
 
+// This is a wholesale portal, not a retail storefront — the price shown to
+// buyers is the Pricing tab's per-supplier dealer cost + markup % (already
+// computed into `retailPrice` on each wdh_variant_pricing row), not the raw
+// dealer/supplier cost. wdh_variants.basePrice/discountPrice remain a manual
+// per-variant override for the rare case an admin needs to set one price
+// regardless of supplier — most imported variants leave both null so this
+// per-supplier pricing is the only source of truth.
 export function bestVariantPrice(
   variant: WdhVariant,
   pricing: WdhVariantPricing[],
@@ -60,15 +68,18 @@ export function bestVariantPrice(
   if (variant.discountPrice != null) return Number(variant.discountPrice);
   if (variant.basePrice != null) return Number(variant.basePrice);
   const positive = pricing
-    .map((p) => (p.dealerPrice != null ? Number(p.dealerPrice) : null))
+    .map((p) => (p.retailPrice != null ? Number(p.retailPrice) : null))
     .filter((p): p is number => p != null && p > 0);
   if (!positive.length) return null;
   return Math.min(...positive);
 }
 
-// `cut_value` is unused in the real data (only garbage test values) so
-// it's deliberately left out of variantLabel (imported from lib/format —
-// see the note there for why it doesn't live in this module).
+// `cut_value` (free-text product form, e.g. "Whole Chicken With Skin") is
+// deliberately left out of variantLabel's primary parts and only appended —
+// see the note in lib/format.ts (imported from there since that module is
+// client-safe and this one pulls in Sequelize). `cut_type` (the Cut Style
+// facet — Whole/Cubes/Stew Cut/etc, from the wdh_options cut_type enum) is
+// the real buyer-facing Cut Style selector and is filtered/faceted below.
 
 export function unitFor(category: string, per: string | null): string {
   if (per && per.trim()) return per.replace(/^Price per /i, "");
@@ -77,12 +88,18 @@ export function unitFor(category: string, per: string | null): string {
 
 export type VariantSummary = {
   id: number;
+  sku: string | null;
   label: string;
   conditionType: string | null;
+  cutType: string | null;
   boneType: string | null;
   skinType: string | null;
+  fatLevel: string | null;
+  origin: string | null;
+  cutValue: string | null;
+  minOrderQty: number | null;
+  minOrderUnit: string | null;
   price: number | null;
-  stockCount: number;
   stockState: StockState;
   image: string | null;
   supplierName: string | null;
@@ -105,7 +122,7 @@ export type ProductSummary = {
 function toSummary(product: WdhProduct): ProductSummary {
   const variants = (product.variants ?? []).map((v): VariantSummary => {
     const price = bestVariantPrice(v, v.pricing ?? []);
-    const stockState = stockStateFor(v.stockCount ?? null);
+    const stockState = stockStateFor(v.stockStatus);
     // Every wdh_variant_pricing row carries a real supplier_id from the
     // original import (confirmed against live data — all 274 rows have
     // one, even the ~97% with no usable price), so this reflects an
@@ -118,12 +135,18 @@ function toSummary(product: WdhProduct): ProductSummary {
     const supplierName = pricingWithSupplier.find((p) => p.WdhSupplier)?.WdhSupplier?.name ?? null;
     return {
       id: v.id,
+      sku: v.sku || null,
       label: variantLabel(v),
       conditionType: v.conditionType || null,
+      cutType: v.cutType || null,
       boneType: v.boneType || null,
       skinType: v.skinType || null,
+      fatLevel: v.fatLevel || null,
+      origin: v.region || null,
+      cutValue: v.cutValue || null,
+      minOrderQty: v.minOrderQty != null ? Number(v.minOrderQty) : null,
+      minOrderUnit: v.minOrderUnit || null,
       price,
-      stockCount: v.stockCount ?? 0,
       stockState,
       // The client's photo library (images.wedohalal.com) is unreliable —
       // wrong/mismatched cuts, some 404s (see ProductCard's onError note) —
@@ -208,8 +231,10 @@ export type ProductQueryParams = {
   search?: string;
   type?: string;
   condition?: string[];
+  cut?: string[];
   bone?: string[];
   skin?: string[];
+  fat?: string[];
   stock?: StockState[];
   priceMin?: number;
   priceMax?: number;
@@ -222,8 +247,10 @@ export type ProductFacets = {
   types: string[];
   typeCounts: Record<string, number>;
   condition: string[];
+  cut: string[];
   bone: string[];
   skin: string[];
+  fat: string[];
 };
 
 export type ProductQueryResult = {
@@ -256,8 +283,10 @@ export async function queryProducts(params: ProductQueryParams): Promise<Product
     search,
     type,
     condition = [],
+    cut = [],
     bone = [],
     skin = [],
+    fat = [],
     stock = [],
     priceMin,
     priceMax,
@@ -295,16 +324,20 @@ export async function queryProducts(params: ProductQueryParams): Promise<Product
     types: uniqueSorted(rows.map((r) => r.type)),
     typeCounts,
     condition: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.conditionType))),
+    cut: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.cutType))),
     bone: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.boneType))),
     skin: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.skinType))),
+    fat: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.fatLevel))),
   };
 
   products = products.filter((p) => {
     if (type && type !== "All" && p.type !== type) return false;
     if (condition.length && !p.variants.some((v) => v.conditionType && condition.includes(v.conditionType)))
       return false;
+    if (cut.length && !p.variants.some((v) => v.cutType && cut.includes(v.cutType))) return false;
     if (bone.length && !p.variants.some((v) => v.boneType && bone.includes(v.boneType))) return false;
     if (skin.length && !p.variants.some((v) => v.skinType && skin.includes(v.skinType))) return false;
+    if (fat.length && !p.variants.some((v) => v.fatLevel && fat.includes(v.fatLevel))) return false;
     if (stock.length && !stock.includes(p.stockState)) return false;
     if (priceMin != null && (p.minPrice == null || p.minPrice < priceMin)) return false;
     if (priceMax != null && (p.minPrice == null || p.minPrice > priceMax)) return false;
@@ -350,12 +383,8 @@ export async function getProductDetail(id: number) {
   };
 }
 
-// Home dashboard's "running low — order soon" nudge. Every variant in the
-// current staging import carries stock_count = 100 (see the note by
-// LOW_STOCK_THRESHOLD above), so this will genuinely return an empty list
-// today — the dashboard hides the section entirely rather than fabricate
-// low-stock items, and will start populating on its own once real
-// inventory counts flow into wdh_variants.stock_count.
+// Home dashboard's "running low — order soon" nudge. Populates once an
+// admin actually marks a variant Low Stock — see stockStateFor's note above.
 export async function getLowStockProducts(limit = 3): Promise<ProductSummary[]> {
   const products = await getAllProducts();
   return products.filter((p) => p.stockState === "low").slice(0, limit);

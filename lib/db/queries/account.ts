@@ -10,6 +10,7 @@ import { WdhProduct } from "@/lib/db/models/WdhProduct";
 import { WdhVariantPricing } from "@/lib/db/models/WdhVariantPricing";
 import { WdhSupplier } from "@/lib/db/models/WdhSupplier";
 import { bestVariantPrice, unitFor } from "@/lib/db/queries/catalogue";
+import { getOrderRevisionView, type OrderRevisionView } from "@/lib/db/queries/adminOrders";
 import { variantLabel, type OrderStatus } from "@/lib/format";
 
 const ACTIVE_STATUSES = ["pending", "new", "shipped"] as const;
@@ -97,6 +98,7 @@ export type RevisionEntry = {
   weightAdjustment: {
     beforeQty: number;
     afterQty: number;
+    unit: string;
     adjustmentAmount: number;
     note: string | null;
   } | null;
@@ -123,6 +125,7 @@ export type OrderDetail = {
   cardLast4: string | null;
   items: OrderDetailItem[];
   revisions: RevisionEntry[];
+  revision: OrderRevisionView | null;
 };
 
 export async function getOrderDetail(
@@ -141,6 +144,7 @@ export async function getOrderDetail(
   });
 
   const items = (order.get("OrderItems") as OrderItem[] | undefined) ?? [];
+  const revision = await getOrderRevisionView(order.id);
 
   return {
     orderNumber: order.orderNumber,
@@ -174,13 +178,15 @@ export async function getOrderDetail(
         try {
           const before = JSON.parse(r.snapshotBefore) as {
             quantity: number;
+            unit?: string;
             totalPrice: number;
             note?: string | null;
           };
-          const after = JSON.parse(r.snapshotAfter) as { quantity: number; totalPrice: number };
+          const after = JSON.parse(r.snapshotAfter) as { quantity: number; unit?: string; totalPrice: number };
           weightAdjustment = {
             beforeQty: before.quantity,
             afterQty: after.quantity,
+            unit: after.unit || before.unit || "kg",
             adjustmentAmount: Number((after.totalPrice - before.totalPrice).toFixed(2)),
             note: before.note ?? null,
           };
@@ -196,6 +202,7 @@ export async function getOrderDetail(
         weightAdjustment,
       };
     }),
+    revision,
   };
 }
 

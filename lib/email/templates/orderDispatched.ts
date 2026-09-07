@@ -1,15 +1,4 @@
-// Email 37 — Order dispatched (phase7-emails.html #email-dispatch).
-//
-// Triggered when order status flips to "shipped" — that transition happens
-// from the admin Orders panel (app/api/admin/orders/[id]), which is out of
-// scope for this build. Ready to be called from that admin action, or from
-// a future driver-assignment flow, whichever lands first.
-//
-// The desktop mockup pass (phase7-emails-desktop.html) added a "weight
-// notice" callout not present in the mobile source — real fresh-meat
-// deliveries can vary ±10% from the ordered weight, and the invoice
-// reflects the actual delivered weight. That's genuinely new, useful
-// information, so it's folded in here as an extra info box.
+
 import { emailLayout } from "@/lib/email/layout";
 import { infoBox, keyValueCard, orderCard, waRow } from "@/lib/email/components";
 import { emailBaseUrl } from "@/lib/email/theme";

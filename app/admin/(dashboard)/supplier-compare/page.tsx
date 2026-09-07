@@ -29,7 +29,7 @@ export default async function AdminSupplierComparePage({
     <div className="flex h-full flex-col">
       <AdminPageHeader title="Supplier Price Comparison" />
 
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
         <form method="get" action="/admin/supplier-compare">
           <AdminToolbar>
             <AdminFilterSelect name="category" defaultValue={sp.category ?? "All"}>

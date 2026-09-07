@@ -5,6 +5,7 @@ import { AdminTableCard } from "@/components/admin/AdminTableCard";
 import { AdminBadge, type AdminBadgeTone } from "@/components/admin/AdminBadge";
 import { AdminPageHeader, AdminHeaderGhostLink } from "@/components/admin/AdminPageHeader";
 import { AdminToolbar, AdminChipLink, AdminToolbarSpacer, AdminCountBadge } from "@/components/admin/AdminToolbar";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import type { OrderStatus } from "@/lib/db/models/Order";
 
 const PAGE_SIZE = 20;
@@ -57,7 +58,7 @@ export default async function AdminOrdersPage({
         <AdminHeaderGhostLink href={exportHref}>⬇ Export</AdminHeaderGhostLink>
       </AdminPageHeader>
 
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
         <AdminToolbar>
           <AdminChipLink active={!sp.status} href={statusHref(undefined)}>
             All
@@ -131,23 +132,7 @@ export default async function AdminOrdersPage({
           </table>
         </AdminTableCard>
 
-        {totalPages > 1 && (
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <Link
-                key={p}
-                href={pageHref(p)}
-                className={`rounded-md px-3 py-1.5 text-[13px] font-bold ${
-                  p === page
-                    ? "bg-[#e05a4a] text-white"
-                    : "border border-[#e4e1dc] bg-white text-[#5a5450] hover:bg-[#f0ede9]"
-                }`}
-              >
-                {p}
-              </Link>
-            ))}
-          </div>
-        )}
+        <AdminPagination page={page} totalPages={totalPages} pageHref={pageHref} />
       </div>
     </div>
   );

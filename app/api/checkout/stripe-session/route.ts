@@ -25,11 +25,10 @@ export async function POST(request: Request) {
     );
   }
 
-  // TODO(Phase 7 — Email Templates): once this checkout flow is finalized,
-  // send the order confirmation email here (or from /checkout/success once
-  // Stripe confirms payment) using orderConfirmationEmail() from
-  // lib/email/templates — template is built and ready, just not wired in
-  // while checkout itself is still being iterated on.
+  // Order confirmation email is NOT sent here — this order is unpaid
+  // ("Pending") until Stripe confirms it. It's sent from the webhook's
+  // handlePaid() once payment actually succeeds (see
+  // app/api/webhooks/stripe/route.ts).
   let receipt;
   try {
     receipt = await createOrder(session.userId, parsed.data);

@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { getAdminDashboardStats } from "@/lib/db/queries/adminDashboard";
 import { getSupplierCompareData } from "@/lib/db/queries/adminSupplierCompare";
+import {
+  AdminPageHeader,
+  AdminHeaderSearch,
+  AdminHeaderGhostLink,
+  AdminHeaderPrimaryLink,
+} from "@/components/admin/AdminPageHeader";
 
 function KpiCard({
   label,
@@ -39,35 +45,13 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-11 shrink-0 items-center gap-3.5 bg-[#141312] px-5">
-        <div className="font-[family-name:var(--font-plex-mono)] text-[14px] font-semibold text-white">
-          Dashboard
-        </div>
-        <div className="text-[13px] text-[#5a5450]">WeDoHalal Master Control</div>
-        <div className="flex-1" />
-        <form action="/admin/products" method="GET" className="flex items-center gap-1.5">
-          <input
-            type="text"
-            name="q"
-            placeholder="Search products, SKUs, suppliers…"
-            className="w-56 rounded-md border border-[#2e2c2a] bg-[#1e1c1a] px-2.5 py-1.5 text-[14px] text-[#ccc] outline-none placeholder:text-[#5a5450] focus:border-[#e05a4a]"
-          />
-        </form>
-        <a
-          href="/api/admin/export/products"
-          className="rounded-[5px] border border-[#3a3632] bg-[#1e1c1a] px-3 py-1.5 text-[14px] font-semibold text-[#aaa] hover:bg-[#2a2724] hover:text-white"
-        >
-          ⬇ Export
-        </a>
-        <Link
-          href="/admin/products"
-          className="rounded-[5px] bg-[#e05a4a] px-3 py-1.5 text-[14px] font-semibold text-white hover:bg-[#c04535]"
-        >
-          + Add Product
-        </Link>
-      </div>
+      <AdminPageHeader title="Dashboard">
+        <AdminHeaderSearch action="/admin/products" placeholder="Search products, SKUs, suppliers…" />
+        <AdminHeaderGhostLink href="/api/admin/export/products">⬇ Export</AdminHeaderGhostLink>
+        <AdminHeaderPrimaryLink href="/admin/products">+ Add Product</AdminHeaderPrimaryLink>
+      </AdminPageHeader>
 
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
         <div className="mb-4 grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-6">
           <KpiCard label="Total Products" value={stats.totalProducts} sub="Across all categories" />
           <KpiCard label="Total Variants" value={stats.totalVariants} sub="Across all suppliers" />

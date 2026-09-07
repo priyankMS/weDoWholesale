@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth/adminSession";
 import { Order } from "@/lib/db/models/Order";
 import { adminOrderStatusSchema } from "@/lib/validation/adminOrders";
+import { notifyOrderDispatched } from "@/lib/db/queries/adminOrders";
 
 export async function PATCH(
   request: Request,
@@ -20,6 +21,12 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
+  const wasShipped = order.orderStatus === "shipped";
   await order.update({ orderStatus: parsed.data.orderStatus });
+
+  if (!wasShipped && parsed.data.orderStatus === "shipped") {
+    await notifyOrderDispatched(order.id);
+  }
+
   return NextResponse.json({ order });
 }

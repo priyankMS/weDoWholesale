@@ -38,7 +38,7 @@ export const adminProductCreateSchema = z.object({
 
   variantLabel: z.string().trim().max(255).nullable().optional(),
   unit: z.string().trim().min(1, "Unit is required").max(100),
-  stockCount: z.coerce.number().int().min(0).nullable().optional(),
+  stockStatus: z.enum(["in", "low", "out"]).nullable().optional(),
 
   supplierId: z.coerce.number().int().positive().nullable().optional(),
   dealerPrice: z.coerce.number().min(0).nullable().optional(),

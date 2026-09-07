@@ -27,7 +27,18 @@ export class WdhVariant extends Model<
   declare cutValue: string | null;
   declare skinType: CreationOptional<string | null>;
   declare boneType: CreationOptional<string | null>;
+  declare fatLevel: CreationOptional<string | null>;
   declare region: CreationOptional<string | null>;
+  declare legacySku: CreationOptional<string | null>;
+  // Full, unaltered "Available Work / Cut Options" text from the
+  // developer's corrected wholesale catalog (e.g. "Whole / do not cut, Cut
+  // to small pieces, ..."). A per-group note of what the buyer can request
+  // be done to the product — not a priced per-SKU choice like cutType.
+  declare cutOptions: CreationOptional<string | null>;
+  declare minOrderQty: CreationOptional<number | null>;
+  declare minOrderUnit: CreationOptional<string | null>;
+  declare weightLbs: CreationOptional<number | null>;
+  declare weightKg: CreationOptional<number | null>;
   declare shortTitle: CreationOptional<string | null>;
   declare longTitle: CreationOptional<string | null>;
   declare basePrice: number | null;
@@ -63,7 +74,14 @@ WdhVariant.init(
     cutValue: { type: DataTypes.STRING(100), allowNull: true, field: "cut_value" },
     skinType: { type: DataTypes.STRING(100), allowNull: true, defaultValue: "", field: "skin_type" },
     boneType: { type: DataTypes.STRING(100), allowNull: true, defaultValue: "", field: "bone_type" },
+    fatLevel: { type: DataTypes.STRING(50), allowNull: true, defaultValue: "", field: "fat_level" },
     region: { type: DataTypes.STRING(255), allowNull: true, defaultValue: "" },
+    legacySku: { type: DataTypes.STRING(50), allowNull: true, defaultValue: "", field: "legacy_sku" },
+    cutOptions: { type: DataTypes.TEXT, allowNull: true, field: "cut_options" },
+    minOrderQty: { type: DataTypes.DECIMAL(10, 2), allowNull: true, field: "min_order_qty" },
+    minOrderUnit: { type: DataTypes.STRING(10), allowNull: true, defaultValue: "", field: "min_order_unit" },
+    weightLbs: { type: DataTypes.DECIMAL(10, 3), allowNull: true, field: "weight_lbs" },
+    weightKg: { type: DataTypes.DECIMAL(10, 3), allowNull: true, field: "weight_kg" },
     shortTitle: { type: DataTypes.STRING(255), allowNull: true, defaultValue: "", field: "short_title" },
     longTitle: { type: DataTypes.STRING(255), allowNull: true, defaultValue: "", field: "long_title" },
     basePrice: { type: DataTypes.DECIMAL(10, 4), allowNull: true, field: "base_price" },

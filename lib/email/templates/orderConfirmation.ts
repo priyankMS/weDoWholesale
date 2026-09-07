@@ -1,12 +1,4 @@
-// Email 36 — Order confirmation (phase7-emails.html #email-order-confirm).
-//
-// NOTE: order creation/payment currently lives entirely in the excluded
-// checkout surface (app/api/checkout/*, app/(portal)/checkout/*,
-// lib/db/queries/orders.ts) which this build is explicitly not allowed to
-// touch — see the TODO left in app/api/checkout/stripe-session/route.ts.
-// This template is ready to be called with sendEmail(user.email, ...)
-// from there (or from the COD order-creation path) once checkout is
-// finalized.
+
 import { emailLayout } from "@/lib/email/layout";
 import { ctaButton, infoBox, itemsCard, orderCard, sectionLabel, waRow } from "@/lib/email/components";
 import { emailBaseUrl } from "@/lib/email/theme";

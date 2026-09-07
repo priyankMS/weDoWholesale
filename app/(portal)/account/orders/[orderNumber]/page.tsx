@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { getOrderDetail } from "@/lib/db/queries/account";
+import { revisionRowChanged } from "@/lib/db/queries/adminOrders";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { AccountHeader } from "@/components/portal/AccountHeader";
 import { OrderStatusBadge } from "@/components/portal/OrderStatusBadge";
@@ -69,15 +70,12 @@ export default async function OrderDetailPage({
   if (!order) notFound();
 
   const cancelled = order.orderStatus === "cancelled" || order.orderStatus === "returned";
-  const updatedRevisions = order.revisions.filter((r) => r.action === "updated");
-  const substitutedNames = new Set(updatedRevisions.map((r) => r.productName));
-  // A weight adjustment reuses the same "updated" action as a real
-  // substitution (same audit trail, same revision log) but isn't one —
-  // the product is unchanged, only the settled weight — so it gets its
-  // own badge/copy instead of being mislabeled "Substituted".
-  const weightAdjustedNames = new Set(
-    updatedRevisions.filter((r) => r.weightAdjustment).map((r) => r.productName),
-  );
+  const itemRows = order.revision?.rows ?? [];
+  // Table 1 ("Your Order") is exactly what was originally placed — items
+  // added later never appeared in the original order, so they're excluded
+  // here (they only show up in the "What Changed" table below).
+  const originalItemRows = itemRows.filter((row) => row.original);
+  const changedRevisionRows = itemRows.filter(revisionRowChanged);
 
   return (
     <div className="pb-24 lg:pb-8">
@@ -106,50 +104,126 @@ export default async function OrderDetailPage({
       )}
 
       <div className="px-4 pt-3.5 pb-1.5 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase lg:px-0">
-        Items ({order.items.length})
+        Your Order ({originalItemRows.length} item{originalItemRows.length === 1 ? "" : "s"})
       </div>
-      <div className="mx-4 mb-1 divide-y divide-neutral-200 overflow-hidden rounded-2xl border-[1.5px] border-neutral-200 bg-white lg:mx-0">
-        {order.items.map((item, i) => {
-          const substituted = substitutedNames.has(item.productName);
-          const weightAdjusted = weightAdjustedNames.has(item.productName);
-          return (
-            <div
-              key={`${item.productName}-${i}`}
-              className={`flex items-center gap-2.5 px-4 py-3.25 ${substituted ? "bg-amber-50" : ""}`}
-            >
-              <div
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[1.15rem] ${
-                  substituted ? "border border-amber-300 bg-amber-50" : "bg-primary-50"
-                }`}
-              >
-                🥩
+      <div className="mx-4 mb-1 overflow-hidden rounded-2xl border-[1.5px] border-neutral-200 bg-white lg:mx-0">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[340px] text-left text-[0.78rem]">
+            <thead>
+              <tr className="border-b border-neutral-200 bg-neutral-50 text-[0.62rem] font-extrabold tracking-wide text-neutral-400 uppercase">
+                <th className="px-4 py-2 font-extrabold">Item</th>
+                <th className="px-2 py-2 text-right font-extrabold">Qty</th>
+                <th className="px-4 py-2 text-right font-extrabold">Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-200">
+              {originalItemRows.map((row) => (
+                <tr key={row.orderItemId}>
+                  <td className="px-4 py-2.5 align-top">
+                    <div className="font-bold text-neutral-900">{row.original!.productName}</div>
+                    {row.original!.sku && (
+                      <div className="text-[0.7rem] text-neutral-400">{row.original!.sku}</div>
+                    )}
+                  </td>
+                  <td className="px-2 py-2.5 text-right align-top font-semibold text-neutral-700 whitespace-nowrap">
+                    {row.original!.quantity} {row.original!.unit}
+                  </td>
+                  <td className="px-4 py-2.5 text-right align-top font-bold text-neutral-900 whitespace-nowrap">
+                    {formatMoney(row.original!.totalPrice)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex items-center justify-between border-t border-neutral-200 bg-neutral-50 px-4 py-2.75 text-[0.86rem]">
+          <span className="font-bold text-neutral-900">
+            {order.revision ? "Originally ordered" : "Order total"}
+          </span>
+          <span className="font-serif text-[1rem] font-bold text-neutral-900">
+            {formatMoney(order.revision?.originalTotal ?? order.finalAmount)}
+          </span>
+        </div>
+      </div>
+
+      {changedRevisionRows.length > 0 && order.revision && (
+        <>
+          <div className="px-4 pt-3.5 pb-1.5 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase lg:px-0">
+            What Changed
+          </div>
+          <div className="mx-4 mb-1 overflow-hidden rounded-2xl border-[1.5px] border-neutral-200 bg-white lg:mx-0">
+            <div className="border-b border-neutral-200 bg-neutral-50 px-4 py-2.5 text-[0.76rem] text-neutral-500">
+              We had to update your order after it was packed — here&apos;s what changed and how it affects your
+              bill.
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[340px] text-left text-[0.78rem]">
+                <thead>
+                  <tr className="border-b border-neutral-200 bg-neutral-50 text-[0.62rem] font-extrabold tracking-wide text-neutral-400 uppercase">
+                    <th className="px-4 py-2 font-extrabold">Item</th>
+                    <th className="px-2 py-2 font-extrabold">Change</th>
+                    <th className="px-4 py-2 text-right font-extrabold">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-200">
+                  {changedRevisionRows.map((row) => {
+                    const diff = row.revised.totalPrice - (row.original?.totalPrice ?? 0);
+                    const isSubstituted = row.original && row.original.productName !== row.revised.productName;
+                    const description = !row.original
+                      ? "New item added"
+                      : isSubstituted
+                        ? `Replaced "${row.original.productName}"`
+                        : `${row.original.quantity} ${row.original.unit} → ${row.revised.quantity} ${row.revised.unit}`;
+                    return (
+                      <tr key={row.orderItemId}>
+                        <td className="px-4 py-2.5 align-top font-bold text-neutral-900">
+                          {row.revised.productName}
+                        </td>
+                        <td className="px-2 py-2.5 align-top text-[0.72rem] text-neutral-400">{description}</td>
+                        <td
+                          className={`px-4 py-2.5 text-right align-top font-serif text-[0.95rem] font-bold whitespace-nowrap ${
+                            diff >= 0 ? "text-amber-600" : "text-green-600"
+                          }`}
+                        >
+                          {diff >= 0 ? "+" : "−"}
+                          {formatMoney(Math.abs(diff))}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex flex-col gap-1 border-t border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.82rem]">
+              <div className="flex justify-between">
+                <span className="text-neutral-500">What you were originally charged</span>
+                <span className="font-semibold text-neutral-900">{formatMoney(order.revision.originalTotal)}</span>
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-[0.84rem] font-bold text-neutral-900">
-                  {item.productName}
-                  {substituted && (
-                    <span className="ml-1.5 rounded-md border border-amber-300 bg-amber-50 px-1.5 py-0.25 text-[0.62rem] font-extrabold text-amber-700">
-                      {weightAdjusted ? "Weight adjusted" : "Substituted"}
-                    </span>
-                  )}
-                </div>
-                <div
-                  className={`text-[0.72rem] ${substituted ? "text-amber-700" : "text-neutral-400"}`}
+              <div className="flex justify-between">
+                <span className="text-neutral-500">Your new order total</span>
+                <span className="font-bold text-neutral-900">{formatMoney(order.revision.revisedTotal)}</span>
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <span className="font-bold text-neutral-900">
+                  {order.revision.balanceAdjustment > 0.005 ? "You owe" : "You're owed a refund of"}
+                </span>
+                <span
+                  className={`font-serif text-[1rem] font-bold ${
+                    order.revision.balanceAdjustment > 0.005 ? "text-amber-600" : "text-green-600"
+                  }`}
                 >
-                  {substituted
-                    ? weightAdjusted
-                      ? "Final weight settled — see revision log below"
-                      : "See revision log below for details"
-                    : `${item.quantity} · ${item.sku ?? ""}`}
-                </div>
+                  {formatMoney(Math.abs(order.revision.balanceAdjustment))}
+                </span>
               </div>
-              <div className="shrink-0 font-serif text-[0.95rem] font-bold text-primary-600">
-                {formatMoney(item.totalPrice)}
+              <div className="text-[0.72rem] text-neutral-400">
+                {order.revision.balanceAdjustment > 0.005
+                  ? "This extra amount is included in the order total below."
+                  : "This will be refunded to your original payment method."}
               </div>
             </div>
-          );
-        })}
-      </div>
+          </div>
+        </>
+      )}
 
       <div className="px-4 pt-3.5 pb-1.5 text-[0.66rem] font-extrabold tracking-widest text-neutral-400 uppercase lg:px-0">
         Order total
@@ -227,8 +301,8 @@ export default async function OrderDetailPage({
                   {r.weightAdjustment ? (
                     <>
                       <div className="text-[0.78rem] text-neutral-500">
-                        Ordered {r.weightAdjustment.beforeQty}kg → Actual{" "}
-                        {r.weightAdjustment.afterQty}kg
+                        Ordered {r.weightAdjustment.beforeQty} {r.weightAdjustment.unit} → Actual{" "}
+                        {r.weightAdjustment.afterQty} {r.weightAdjustment.unit}
                         {Math.abs(r.weightAdjustment.adjustmentAmount) >= 0.005 && (
                           <span
                             className={`ml-1.5 font-bold ${
@@ -259,6 +333,21 @@ export default async function OrderDetailPage({
       )}
 
       <div className="mt-3 flex gap-2 px-4 lg:px-0">
+        <a
+          href={`/api/account/orders/${order.orderNumber}/invoice?format=pdf`}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-neutral-200 bg-white px-3 py-3 text-[0.82rem] font-extrabold text-neutral-700 transition-colors hover:bg-neutral-50"
+        >
+          ⬇ PDF
+        </a>
+        <a
+          href={`/api/account/orders/${order.orderNumber}/invoice?format=xlsx`}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-neutral-200 bg-white px-3 py-3 text-[0.82rem] font-extrabold text-neutral-700 transition-colors hover:bg-neutral-50"
+        >
+          ⬇ Excel
+        </a>
+      </div>
+
+      <div className="mt-2 flex gap-2 px-4 lg:px-0">
         <ReorderButton orderNumber={order.orderNumber} className="flex-1" />
         <Link
           href={`/messages/new?order=${encodeURIComponent(order.orderNumber)}&topic=invoice`}

@@ -6,13 +6,14 @@ import { AdminBadge } from "@/components/admin/AdminBadge";
 import { StockBadge } from "@/components/admin/StockBadge";
 import { AdminPageHeader, AdminHeaderSearch, AdminHeaderGhostLink } from "@/components/admin/AdminPageHeader";
 import { AdminToolbar, AdminFilterSelect, AdminToolbarSpacer, AdminCountBadge } from "@/components/admin/AdminToolbar";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 
 const PAGE_SIZE = 25;
 
 export default async function AdminVariantsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string; condition?: string; bone?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; condition?: string; cut?: string; bone?: string; fat?: string; origin?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
@@ -22,7 +23,10 @@ export default async function AdminVariantsPage({
       search: sp.q,
       category: sp.category,
       condition: sp.condition,
+      cut: sp.cut,
       bone: sp.bone,
+      fat: sp.fat,
+      origin: sp.origin,
       page,
       pageSize: PAGE_SIZE,
     }),
@@ -37,7 +41,10 @@ export default async function AdminVariantsPage({
     if (sp.q) params.set("q", sp.q);
     if (sp.category) params.set("category", sp.category);
     if (sp.condition) params.set("condition", sp.condition);
+    if (sp.cut) params.set("cut", sp.cut);
     if (sp.bone) params.set("bone", sp.bone);
+    if (sp.fat) params.set("fat", sp.fat);
+    if (sp.origin) params.set("origin", sp.origin);
     params.set("page", String(p));
     return `/admin/variants?${params.toString()}`;
   }
@@ -46,7 +53,10 @@ export default async function AdminVariantsPage({
   if (sp.q) exportParams.set("q", sp.q);
   if (sp.category) exportParams.set("category", sp.category);
   if (sp.condition) exportParams.set("condition", sp.condition);
+  if (sp.cut) exportParams.set("cut", sp.cut);
   if (sp.bone) exportParams.set("bone", sp.bone);
+  if (sp.fat) exportParams.set("fat", sp.fat);
+  if (sp.origin) exportParams.set("origin", sp.origin);
 
   return (
     <div className="flex h-full flex-col">
@@ -54,14 +64,17 @@ export default async function AdminVariantsPage({
         <AdminHeaderSearch action="/admin/variants" defaultValue={sp.q} placeholder="Search by SKU or title…">
           {sp.category && <input type="hidden" name="category" value={sp.category} />}
           {sp.condition && <input type="hidden" name="condition" value={sp.condition} />}
+          {sp.cut && <input type="hidden" name="cut" value={sp.cut} />}
           {sp.bone && <input type="hidden" name="bone" value={sp.bone} />}
+          {sp.fat && <input type="hidden" name="fat" value={sp.fat} />}
+          {sp.origin && <input type="hidden" name="origin" value={sp.origin} />}
         </AdminHeaderSearch>
         <AdminHeaderGhostLink href={`/api/admin/export/variants?${exportParams.toString()}`}>
           ⬇ Export
         </AdminHeaderGhostLink>
       </AdminPageHeader>
 
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
         <form method="get" action="/admin/variants">
           <input type="hidden" name="q" value={sp.q ?? ""} />
           <AdminToolbar>
@@ -81,11 +94,35 @@ export default async function AdminVariantsPage({
                 </option>
               ))}
             </AdminFilterSelect>
+            <AdminFilterSelect name="cut" defaultValue={sp.cut ?? "All"}>
+              <option value="All">All Cut Styles</option>
+              {facets.cutTypes.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </AdminFilterSelect>
             <AdminFilterSelect name="bone" defaultValue={sp.bone ?? "All"}>
               <option value="All">All Bone Types</option>
               {facets.bones.map((b) => (
                 <option key={b} value={b}>
                   {b}
+                </option>
+              ))}
+            </AdminFilterSelect>
+            <AdminFilterSelect name="fat" defaultValue={sp.fat ?? "All"}>
+              <option value="All">All Fat Levels</option>
+              {facets.fatLevels.map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </AdminFilterSelect>
+            <AdminFilterSelect name="origin" defaultValue={sp.origin ?? "All"}>
+              <option value="All">All Origins</option>
+              {facets.origins.map((o) => (
+                <option key={o} value={o}>
+                  {o}
                 </option>
               ))}
             </AdminFilterSelect>
@@ -104,7 +141,7 @@ export default async function AdminVariantsPage({
           <table className="w-full text-left text-[14px]">
             <thead>
               <tr className="bg-[#f0ede9]">
-                {["SKU", "Parent Product", "Category", "Condition", "Cut / Style", "Bone", "Skin", "Stock", "Retail Price", "Supplier"].map(
+                {["SKU", "Parent Product", "Category", "Condition", "Cut / Style", "Bone", "Skin", "Fat", "Origin", "Stock", "Price", "Supplier"].map(
                   (h) => (
                     <th
                       key={h}
@@ -145,13 +182,14 @@ export default async function AdminVariantsPage({
                   </td>
                   <td className="px-2.5 py-1.5 text-[#5a5450]">{v.skinType || "—"}</td>
                   <td className="px-2.5 py-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <StockBadge state={v.stockState} />
-                      <span className="text-[#9a9490]">{v.stockCount}</span>
-                    </div>
+                    {v.fatLevel ? <AdminBadge tone="category">{v.fatLevel}</AdminBadge> : "—"}
+                  </td>
+                  <td className="px-2.5 py-1.5 text-[#5a5450]">{v.region || "—"}</td>
+                  <td className="px-2.5 py-1.5">
+                    <StockBadge state={v.stockState} />
                   </td>
                   <td className="px-2.5 py-1.5 font-[family-name:var(--font-plex-mono)] font-bold text-[#c04535]">
-                    {v.basePrice != null ? `$${v.basePrice.toFixed(2)}` : "—"}
+                    {v.price != null ? `$${v.price.toFixed(2)}` : "—"}
                   </td>
                   <td className="px-2.5 py-1.5">
                     {v.supplierNames.length ? (
@@ -175,7 +213,7 @@ export default async function AdminVariantsPage({
               ))}
               {variants.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="px-4 py-8 text-center text-[#9a9490]">
+                  <td colSpan={13} className="px-4 py-8 text-center text-[#9a9490]">
                     No variants found.
                   </td>
                 </tr>
@@ -184,23 +222,7 @@ export default async function AdminVariantsPage({
           </table>
         </AdminTableCard>
 
-        {totalPages > 1 && (
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <Link
-                key={p}
-                href={pageHref(p)}
-                className={`rounded-md px-3 py-1.5 text-[13px] font-bold ${
-                  p === page
-                    ? "bg-[#e05a4a] text-white"
-                    : "border border-[#e4e1dc] bg-white text-[#5a5450] hover:bg-[#f0ede9]"
-                }`}
-              >
-                {p}
-              </Link>
-            ))}
-          </div>
-        )}
+        <AdminPagination page={page} totalPages={totalPages} pageHref={pageHref} />
       </div>
     </div>
   );

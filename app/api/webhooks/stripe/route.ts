@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
-import { markOrderPaidFromStripe, markOrderPaymentFailed } from "@/lib/db/queries/orders";
+import { markOrderPaidFromStripe, markOrderPaymentFailed, notifyOrderConfirmed } from "@/lib/db/queries/orders";
 
 // Source of truth for payment confirmation — Stripe calls this server-to-
 // server once a Checkout Session completes, so unlike the /checkout/success
@@ -78,7 +78,7 @@ async function handlePaid(stripe: Stripe, sessionId: string, orderNumber: string
   const charge = paymentIntent?.latest_charge as Stripe.Charge | null | undefined;
   const cardDetails = charge?.payment_method_details?.card;
 
-  await markOrderPaidFromStripe(orderNumber, {
+  const justPaid = await markOrderPaidFromStripe(orderNumber, {
     stripeSessionId: fullSession.id,
     stripePaymentIntentId: paymentIntent?.id ?? null,
     receiptUrl: charge?.receipt_url ?? null,
@@ -86,4 +86,15 @@ async function handlePaid(stripe: Stripe, sessionId: string, orderNumber: string
     cardBrand: cardDetails?.brand ?? null,
     cardLast4: cardDetails?.last4 ?? null,
   });
+
+  // Confirmation email is enqueued, not awaited inline — Stripe's 10s
+  // response budget (see the comment on the POST handler above) shouldn't
+  // stretch to cover a DB read + queue publish, and a failure here must
+  // never turn into a webhook 500 (which would make Stripe retry the whole
+  // event, including the now-redundant payment-status update).
+  if (justPaid) {
+    notifyOrderConfirmed(orderNumber).catch((err) =>
+      console.error(`[stripe-webhook] Failed to send order confirmation for ${orderNumber}:`, err),
+    );
+  }
 }

@@ -23,7 +23,7 @@ export default async function AdminProductEditPage({
     <div className="flex h-full flex-col">
       <AdminPageHeader title={product.item} subtitle={`SKU: ${product.sku || "—"}`} />
 
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
         <Link href="/admin/products" className="mb-4 inline-block text-[13px] font-bold text-[#e05a4a]">
           ← Back to Products
         </Link>
@@ -43,7 +43,7 @@ export default async function AdminProductEditPage({
           }}
         />
 
-        <div className="mt-6 rounded-md border border-[#e4e1dc] bg-white p-5">
+        <div className="mt-6 rounded-md border border-[#e4e1dc] bg-white p-3.5 sm:p-5">
           <div className="mb-4">
             <h2 className="text-[14px] font-extrabold text-[#1a1816]">Variants, Stock &amp; Supplier</h2>
           </div>
@@ -73,13 +73,10 @@ export default async function AdminProductEditPage({
                     </td>
                     <td className="px-2.5 py-1.5 text-[#5a5450]">{v.label}</td>
                     <td className="px-2.5 py-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <StockBadge state={v.stockState} />
-                        <span className="text-[#9a9490]">{v.stockCount}</span>
-                      </div>
+                      <StockBadge state={v.stockState} />
                     </td>
                     <td className="px-2.5 py-1.5 font-[family-name:var(--font-plex-mono)] font-bold text-[#c04535]">
-                      {v.basePrice != null ? `$${v.basePrice.toFixed(2)}` : "—"}
+                      {v.price != null ? `$${v.price.toFixed(2)}` : "—"}
                     </td>
                     <td className="px-2.5 py-1.5">
                       {v.supplierNames.length ? (

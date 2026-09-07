@@ -3,6 +3,7 @@ import Link from "next/link";
 import { WdhVariant } from "@/lib/db/models/WdhVariant";
 import { WdhProduct } from "@/lib/db/models/WdhProduct";
 import { variantLabel } from "@/lib/format";
+import { stockStateFor } from "@/lib/db/queries/catalogue";
 import { AdminVariantForm } from "@/components/admin/AdminVariantForm";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
@@ -26,7 +27,7 @@ export default async function AdminVariantEditPage({
         subtitle={`SKU: ${variant.sku || "—"}`}
       />
 
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
         <Link href="/admin/variants" className="mb-4 inline-block text-[13px] font-bold text-[#e05a4a]">
           ← Back to Variants
         </Link>
@@ -39,8 +40,14 @@ export default async function AdminVariantEditPage({
             cutType: variant.cutType,
             boneType: variant.boneType,
             skinType: variant.skinType,
+            fatLevel: variant.fatLevel,
+            region: variant.region,
+            cutValue: variant.cutValue,
+            legacySku: variant.legacySku,
+            minOrderQty: variant.minOrderQty != null ? Number(variant.minOrderQty) : null,
+            minOrderUnit: variant.minOrderUnit,
             basePrice: variant.basePrice != null ? Number(variant.basePrice) : null,
-            stockCount: variant.stockCount,
+            stockStatus: stockStateFor(variant.stockStatus),
           }}
         />
       </div>

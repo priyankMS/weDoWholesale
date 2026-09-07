@@ -135,11 +135,29 @@ export function announcementTagClass(tag: AnnouncementTag): string {
 
 export function variantLabel(variant: {
   conditionType?: string | null;
+  cutType?: string | null;
   boneType?: string | null;
   skinType?: string | null;
+  fatLevel?: string | null;
+  cutValue?: string | null;
 }): string {
-  const parts = [variant.conditionType, variant.boneType, variant.skinType].filter(
-    (v): v is string => !!v && v.trim().length > 0,
-  );
+  // cutType ("Whole", "Cubes", "Stew Cut", etc — the wdh_options cut_type
+  // enum) is the primary buyer-facing choice for meat products, since it's
+  // usually what drives the price difference between SKUs of the same
+  // product — surfaced right after condition. fatLevel/cutValue are the
+  // other fields that can distinguish SKUs (e.g. Medium vs High fat) —
+  // condition/bone/skin stay identical for those. cutValue is appended
+  // rather than woven in since it's a free-text product-form name, not a
+  // short attribute tag like the others (see lib/db/queries/catalogue.ts's
+  // note on why cutValue was previously excluded: the pre-2026-09-04 data
+  // there was placeholder junk).
+  const parts = [
+    variant.conditionType,
+    variant.cutType,
+    variant.boneType,
+    variant.skinType,
+    variant.fatLevel ? `${variant.fatLevel} Fat` : null,
+    variant.cutValue,
+  ].filter((v): v is string => !!v && v.trim().length > 0);
   return parts.length ? parts.join(" · ") : "Standard";
 }

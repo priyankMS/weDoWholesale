@@ -105,9 +105,8 @@ export function ProductDetailPanel({
           boneType: v.boneType ?? "",
           skinType: v.skinType ?? "",
           unit: v.unit ?? "kg",
-          stockCount: String(v.stockCount ?? 0),
+          stockStatus: v.stockState,
           basePrice: v.basePrice != null ? String(v.basePrice) : "",
-          discountPrice: v.discountPrice != null ? String(v.discountPrice) : "",
         };
       }
       setVariantDrafts(vd);
@@ -196,9 +195,8 @@ export function ProductDetailPanel({
         boneType: draft.boneType,
         skinType: draft.skinType,
         unit: draft.unit,
-        stockCount: draft.stockCount ? Number(draft.stockCount) : null,
+        stockStatus: draft.stockStatus as "in" | "low" | "out",
         basePrice: draft.basePrice ? Number(draft.basePrice) : null,
-        discountPrice: draft.discountPrice ? Number(draft.discountPrice) : null,
       });
       toast.success("Variant saved");
       router.refresh();
@@ -292,7 +290,7 @@ export function ProductDetailPanel({
         onClick={onClose}
         aria-hidden
       />
-      <div className="fixed top-0 right-0 z-[200] flex h-screen w-full max-w-[700px] flex-col bg-white shadow-2xl">
+      <div className="fixed top-0 right-0 z-[200] flex h-screen w-full max-w-[960px] flex-col bg-white shadow-2xl">
         <div className="flex shrink-0 items-center gap-3 bg-[#141312] px-4.5 py-3">
           <div className="min-w-0 flex-1">
             <div className="truncate font-[family-name:var(--font-plex-mono)] text-[16px] font-semibold text-white">
@@ -310,13 +308,13 @@ export function ProductDetailPanel({
           </button>
         </div>
 
-        <div className="flex shrink-0 border-b border-[#2a2724] bg-[#1a1917]">
+        <div className="flex shrink-0 overflow-x-auto border-b border-[#2a2724] bg-[#1a1917]">
           {TABS.map((t) => (
             <button
               key={t.key}
               type="button"
               onClick={() => setTab(t.key)}
-              className={`border-b-2 px-4 py-2 text-[14px] font-semibold transition-colors ${
+              className={`shrink-0 border-b-2 px-4 py-2 text-[14px] font-semibold whitespace-nowrap transition-colors ${
                 tab === t.key
                   ? "border-[#e05a4a] text-white"
                   : "border-transparent text-[#6a6460] hover:text-[#aaa]"
@@ -338,7 +336,7 @@ export function ProductDetailPanel({
                     <div className="mb-2.5 border-b border-[#e4e1dc] pb-1.5 text-[13px] font-bold tracking-widest text-[#9a9490] uppercase">
                       Basic Information
                     </div>
-                    <div className="grid grid-cols-2 gap-2.5">
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                       <div>
                         <label className={labelClass}>Product Name</label>
                         <input
@@ -425,11 +423,11 @@ export function ProductDetailPanel({
                         </div>
                       </div>
                       <div className="rounded-md border border-[#e4e1dc] px-2.5 py-2">
-                        <div className="text-[13px] text-[#9a9490] uppercase">Retail from</div>
+                        <div className="text-[13px] text-[#9a9490] uppercase">Price from</div>
                         <div className="font-semibold text-[#e05a4a]">
                           {(() => {
                             const prices = detail.variants
-                              .map((v) => v.basePrice)
+                              .map((v) => v.price)
                               .filter((p): p is number => p != null);
                             return prices.length ? `$${Math.min(...prices).toFixed(2)}` : "—";
                           })()}
@@ -465,10 +463,11 @@ export function ProductDetailPanel({
                     Variants for {form.item} ({detail.variants.length})
                   </div>
                   <div className="mb-2.5 rounded-md border border-[#f5c4be] bg-[#fdf2f1] px-2.5 py-1.5 text-[13px] text-[#c04535]">
-                    Retail Price / Sale Price here are what customers actually see on the
-                    website — the Pricing tab tracks supplier cost, not the storefront price.
+                    Wholesale $ here is a manual override — set it and that&apos;s the price customers
+                    see. Leave it blank and the price comes from the Pricing tab&apos;s supplier cost +
+                    markup instead (that&apos;s what&apos;s live for most variants right now).
                   </div>
-                  <div className="mb-1 grid grid-cols-[1fr_90px_90px_80px_80px_60px] gap-1.5 px-0.5 text-[11px] font-semibold tracking-wide text-[#9a9490] uppercase">
+                  <div className="hidden sm:mb-1 sm:grid sm:grid-cols-[1fr_120px_110px_130px_130px_110px] sm:gap-1.5 sm:px-0.5 sm:text-[11px] sm:font-semibold sm:tracking-wide sm:text-[#9a9490] sm:uppercase">
                     <span>SKU</span>
                     <span>Condition</span>
                     <span>Cut</span>
@@ -485,71 +484,106 @@ export function ProductDetailPanel({
                         boneType: v.boneType ?? "",
                         skinType: v.skinType ?? "",
                         unit: v.unit ?? "kg",
-                        stockCount: String(v.stockCount ?? 0),
+                        stockStatus: v.stockState,
                         basePrice: v.basePrice != null ? String(v.basePrice) : "",
-                        discountPrice: v.discountPrice != null ? String(v.discountPrice) : "",
                       };
                       return (
                         <div key={v.id} className="rounded-md border border-[#e4e1dc] p-2">
-                          <div className="mb-1.5 grid grid-cols-[1fr_90px_90px_80px_80px_60px] gap-1.5 text-[14px]">
-                            <input
-                              className={`${inputClass} font-[family-name:var(--font-plex-mono)] text-[14px]`}
-                              value={draft.sku}
-                              onChange={(e) => variantField(v.id, "sku", e.target.value)}
-                            />
-                            <select
-                              className={selectClass}
-                              value={draft.conditionType}
-                              onChange={(e) => variantField(v.id, "conditionType", e.target.value)}
-                            >
-                              <option value="">—</option>
-                              {detail.facets.conditions.map((c) => (
-                                <option key={c} value={c}>
-                                  {c}
-                                </option>
-                              ))}
-                            </select>
-                            <input
-                              className={inputClass}
-                              value={draft.cutType}
-                              onChange={(e) => variantField(v.id, "cutType", e.target.value)}
-                              placeholder="Cut"
-                            />
-                            <select
-                              className={selectClass}
-                              value={draft.boneType}
-                              onChange={(e) => variantField(v.id, "boneType", e.target.value)}
-                            >
-                              <option value="">N/A</option>
-                              {detail.facets.bones.map((b) => (
-                                <option key={b} value={b}>
-                                  {b}
-                                </option>
-                              ))}
-                            </select>
-                            <select
-                              className={selectClass}
-                              value={draft.skinType}
-                              onChange={(e) => variantField(v.id, "skinType", e.target.value)}
-                            >
-                              <option value="">N/A</option>
-                              {detail.facets.skins.map((s) => (
-                                <option key={s} value={s}>
-                                  {s}
-                                </option>
-                              ))}
-                            </select>
-                            <input
-                              type="number"
-                              className={inputClass}
-                              value={draft.stockCount}
-                              onChange={(e) => variantField(v.id, "stockCount", e.target.value)}
-                              title="Stock count"
-                            />
+                          {/* 2-up on mobile (labeled, since the header row above is
+                              desktop-only) so every field stays on-screen without
+                              a horizontal scroll; the desktop grid replaces it at sm. */}
+                          <div className="mb-1.5 grid grid-cols-2 gap-2 text-[14px] sm:grid-cols-[1fr_120px_110px_130px_130px_110px] sm:gap-1.5">
+                            <div>
+                              <label className="mb-0.5 block text-[11px] font-semibold text-[#9a9490] uppercase sm:hidden">
+                                SKU
+                              </label>
+                              <input
+                                className={`${inputClass} font-[family-name:var(--font-plex-mono)] text-[14px]`}
+                                value={draft.sku}
+                                onChange={(e) => variantField(v.id, "sku", e.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-[11px] font-semibold text-[#9a9490] uppercase sm:hidden">
+                                Condition
+                              </label>
+                              <select
+                                className={selectClass}
+                                value={draft.conditionType}
+                                onChange={(e) => variantField(v.id, "conditionType", e.target.value)}
+                              >
+                                <option value="">—</option>
+                                {detail.facets.conditions.map((c) => (
+                                  <option key={c} value={c}>
+                                    {c}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-[11px] font-semibold text-[#9a9490] uppercase sm:hidden">
+                                Cut
+                              </label>
+                              <input
+                                className={inputClass}
+                                value={draft.cutType}
+                                onChange={(e) => variantField(v.id, "cutType", e.target.value)}
+                                placeholder="Cut"
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-[11px] font-semibold text-[#9a9490] uppercase sm:hidden">
+                                Bone
+                              </label>
+                              <select
+                                className={selectClass}
+                                value={draft.boneType}
+                                onChange={(e) => variantField(v.id, "boneType", e.target.value)}
+                              >
+                                <option value="">N/A</option>
+                                {detail.facets.bones.map((b) => (
+                                  <option key={b} value={b}>
+                                    {b}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-[11px] font-semibold text-[#9a9490] uppercase sm:hidden">
+                                Skin
+                              </label>
+                              <select
+                                className={selectClass}
+                                value={draft.skinType}
+                                onChange={(e) => variantField(v.id, "skinType", e.target.value)}
+                              >
+                                <option value="">N/A</option>
+                                {detail.facets.skins.map((s) => (
+                                  <option key={s} value={s}>
+                                    {s}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-[11px] font-semibold text-[#9a9490] uppercase sm:hidden">
+                                Stock
+                              </label>
+                              <select
+                                className={selectClass}
+                                value={draft.stockStatus}
+                                onChange={(e) => variantField(v.id, "stockStatus", e.target.value)}
+                                title="Stock status"
+                              >
+                                <option value="in">In stock</option>
+                                <option value="low">Low stock</option>
+                                <option value="out">Out of stock</option>
+                              </select>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex flex-wrap items-center gap-1.5">
                             <label className="text-[13px] font-semibold text-[#9a9490] uppercase">
-                              Retail $
+                              Wholesale $
                             </label>
                             <input
                               type="number"
@@ -568,17 +602,6 @@ export function ProductDetailPanel({
                               <option value="lb">/lb</option>
                               <option value="pack">/pack</option>
                             </select>
-                            <label className="ml-2 text-[13px] font-semibold text-[#9a9490] uppercase">
-                              Sale $
-                            </label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              placeholder="none"
-                              className="w-24 rounded border border-[#f5c4be] bg-[#fff8e0] px-1.5 py-1 text-right font-[family-name:var(--font-plex-mono)] text-[14px] font-bold text-[#c48a00] outline-none focus:border-[#c48a00]"
-                              value={draft.discountPrice}
-                              onChange={(e) => variantField(v.id, "discountPrice", e.target.value)}
-                            />
                             <div className="flex-1" />
                             <button
                               type="button"
@@ -608,7 +631,7 @@ export function ProductDetailPanel({
                     Pricing per variant — {form.item}
                   </div>
                   <div className="mb-3 text-[14px] text-[#9a9490]">
-                    Editing supplier price or markup % recalculates retail price live.
+                    Editing supplier price or markup % recalculates wholesale price live.
                   </div>
                   {detail.pricing.map((v) => (
                     <div key={v.variantId} className="mb-3">
@@ -618,7 +641,8 @@ export function ProductDetailPanel({
                           {v.sku}
                         </span>
                       </div>
-                      <table className="w-full text-[14px]">
+                      <div className="overflow-x-auto">
+                      <table className="w-full min-w-[420px] text-[14px]">
                         <thead>
                           <tr className="bg-[#f0ede9]">
                             <th className="px-2 py-1 text-left text-[13px] font-semibold text-[#5a5450] uppercase">
@@ -631,7 +655,7 @@ export function ProductDetailPanel({
                               Markup %
                             </th>
                             <th className="px-2 py-1 text-left text-[13px] font-semibold text-[#5a5450] uppercase">
-                              Retail Price
+                              Wholesale Price
                             </th>
                             <th className="w-8" />
                           </tr>
@@ -688,6 +712,7 @@ export function ProductDetailPanel({
                           )}
                         </tbody>
                       </table>
+                      </div>
 
                       {(() => {
                         const pricedSupplierIds = new Set(
@@ -701,7 +726,7 @@ export function ProductDetailPanel({
                           retail: "",
                         };
                         return (
-                          <div className="mt-1.5 flex items-center gap-1.5 border-t border-dashed border-[#d0ccc6] pt-1.5">
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 border-t border-dashed border-[#d0ccc6] pt-1.5">
                             <select
                               className={`${selectClass} w-40`}
                               value={draft.supplierId}
@@ -722,7 +747,7 @@ export function ProductDetailPanel({
                             />
                             <input
                               className="w-20 rounded border border-[#d0ccc6] px-1.5 py-1 text-right font-[family-name:var(--font-plex-mono)] text-[14px] outline-none focus:border-[#e05a4a]"
-                              placeholder="Retail"
+                              placeholder="Wholesale"
                               value={draft.retail}
                               onChange={(e) => newPriceField(v.variantId, "retail", e.target.value)}
                             />
@@ -775,7 +800,7 @@ export function ProductDetailPanel({
                       Ideal: 100–160 characters. Shown below title in Google results.
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                     <div>
                       <label className={labelClass}>Image Alt Tag</label>
                       <input
@@ -838,7 +863,7 @@ export function ProductDetailPanel({
                   <div className="mb-2.5 text-[13px] font-bold tracking-widest text-[#9a9490] uppercase">
                     Product Images
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {(
                       [
                         { label: "Thumbnail (main)", urlKey: "thumbnail", altKey: "thumbnailAlt" },

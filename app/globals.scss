@@ -96,3 +96,24 @@ body {
 .animate-wdh-drift {
   animation: wdh-drift linear infinite;
 }
+
+/* A persistently visible (not OS-overlay-hidden) horizontal scrollbar for
+   swipeable chip/filter rows, so the row reads as scrollable at rest
+   instead of only while actively dragging. */
+.scroll-visible {
+  scrollbar-width: thin;
+  scrollbar-color: #{tokens.$color-neutral-200} transparent;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #{tokens.$color-neutral-200};
+    border-radius: 999px;
+  }
+}

@@ -78,6 +78,22 @@ export function AdminVariantForm({
             <label className={labelClass}>Skin</label>
             <input {...register("skinType")} placeholder="With Skin / Skinless" className={inputClass} />
           </div>
+          <div>
+            <label className={labelClass}>Fat Level</label>
+            <input {...register("fatLevel")} placeholder="Lean / Medium / High" className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Country of Origin</label>
+            <input {...register("region")} placeholder="e.g. Alberta, Canada" className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Product Form (Cut Detail)</label>
+            <input {...register("cutValue")} placeholder='e.g. "Whole Chicken With Skin"' className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Legacy SKU</label>
+            <input {...register("legacySku")} className={inputClass} />
+          </div>
         </div>
       </div>
 
@@ -85,15 +101,27 @@ export function AdminVariantForm({
         <h2 className={sectionTitleClass}>Stock &amp; Price</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>Base Price ($)</label>
+            <label className={labelClass}>Wholesale Price ($)</label>
             <input type="number" step="0.01" min="0" {...register("basePrice")} className={inputClass} />
             {errors.basePrice && (
               <p className="mt-1 text-[13px] font-semibold text-[#cc2222]">{errors.basePrice.message}</p>
             )}
           </div>
           <div>
-            <label className={labelClass}>Stock Count</label>
-            <input type="number" step="1" min="0" {...register("stockCount")} className={inputClass} />
+            <label className={labelClass}>Stock Status</label>
+            <select {...register("stockStatus")} className={inputClass}>
+              <option value="in">In stock</option>
+              <option value="low">Low stock</option>
+              <option value="out">Out of stock</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelClass}>Min Order Qty</label>
+            <input type="number" step="0.01" min="0" {...register("minOrderQty")} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Min Order Unit</label>
+            <input {...register("minOrderUnit")} placeholder="kg" className={inputClass} />
           </div>
         </div>
       </div>
