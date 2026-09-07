@@ -15,4 +15,8 @@ export {
 } from "@/lib/email/templates/orderRevised";
 export { invoiceEmail, type InvoiceEmailParams } from "@/lib/email/templates/invoice";
 export { passwordResetEmail, type PasswordResetEmailParams } from "@/lib/email/templates/passwordReset";
+export {
+  adminPasswordResetEmail,
+  type AdminPasswordResetEmailParams,
+} from "@/lib/email/templates/adminPasswordReset";
 export { lowStockAlertEmail, type LowStockAlertParams } from "@/lib/email/templates/lowStockAlert";

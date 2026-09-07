@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -90,6 +91,12 @@ export default function AdminLoginPage() {
             {isMutating ? "Signing in…" : "Sign in →"}
           </button>
         </form>
+
+        <p className="mt-4 text-center text-xs">
+          <Link href="/admin/forgot-password" className="font-bold text-neutral-400 hover:text-white">
+            Forgot your password?
+          </Link>
+        </p>
 
         <p className="mt-5 text-center text-xs text-neutral-600">
           Staff access only. Wholesale customers should sign in at{" "}
