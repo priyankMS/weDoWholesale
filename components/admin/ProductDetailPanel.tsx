@@ -9,6 +9,8 @@ import {
   type AdminProductDetail,
 } from "@/lib/api/adminProducts";
 import { updateAdminVariant } from "@/lib/api/adminVariants";
+import { AddVariantForm } from "@/components/admin/AddVariantForm";
+import { DeleteVariantButton } from "@/components/admin/DeleteVariantButton";
 import { updateAdminPricing, createAdminPricing } from "@/lib/api/adminPricing";
 import { getApiErrorMessage } from "@/lib/api/error";
 import { computeSeoStatus, slugify } from "@/lib/seo";
@@ -603,6 +605,12 @@ export function ProductDetailPanel({
                               <option value="pack">/pack</option>
                             </select>
                             <div className="flex-1" />
+                            <DeleteVariantButton
+                              variantId={v.id}
+                              onDeleted={() => productId != null && loadDetail(productId)}
+                              className="flex h-7 items-center gap-1 rounded border border-[#f5c4be] bg-white px-2 text-[13px] font-semibold text-[#c04535] hover:bg-[#fdf2f1] disabled:opacity-50"
+                              label="🗑️"
+                            />
                             <button
                               type="button"
                               onClick={() => handleSaveVariant(v.id)}
@@ -621,6 +629,16 @@ export function ProductDetailPanel({
                         No variants yet.
                       </div>
                     )}
+                    <AddVariantForm
+                      productId={productId}
+                      facets={{
+                        conditions: detail.facets.conditions,
+                        cutTypes: detail.facets.cutTypes,
+                        bones: detail.facets.bones,
+                        skins: detail.facets.skins,
+                      }}
+                      onCreated={() => productId != null && loadDetail(productId)}
+                    />
                   </div>
                 </div>
               )}

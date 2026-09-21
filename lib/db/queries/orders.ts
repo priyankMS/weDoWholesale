@@ -236,6 +236,7 @@ export async function notifyOrderConfirmed(orderNumber: string): Promise<void> {
     deliveryFeeLabel: Number(order.shippingFee ?? 0) > 0 ? formatMoney(Number(order.shippingFee)) : "Free",
     total: Number(order.finalAmount),
     cancellationCutoffLabel: cutoffDate ? `${formatDate(cutoffDate)}, 6:00 PM` : "24 hours before delivery",
+    receiptUrl: order.receiptUrl,
   });
   await enqueueEmail({ to: user.email, subject, html, text });
 }

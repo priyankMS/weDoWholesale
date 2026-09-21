@@ -425,9 +425,12 @@ export type OrderRevisionRow = {
 // True only when a row is worth surfacing as "changed" (newly added, or
 // original differs from revised) — a never-touched item now carries
 // original === revised (see getOrderRevisionView below), so callers that
-// only want the delta (e.g. the customer account page) must filter with
-// this rather than just checking `original != null`.
-export function revisionRowChanged(row: OrderRevisionRow): boolean {
+// only want the delta (e.g. the customer account page, the invoice
+// renderers) must filter with this rather than just checking
+// `original != null`. Takes just the original/revised pair (not the full
+// OrderRevisionRow) so InvoiceRow — which has the same shape under a
+// different id field — can reuse it too.
+export function revisionRowChanged(row: { original: OrderItemSnapshot | null; revised: OrderItemSnapshot }): boolean {
   if (!row.original) return true;
   return (
     row.original.productName !== row.revised.productName ||

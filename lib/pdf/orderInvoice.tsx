@@ -6,8 +6,11 @@ import { formatDateTime } from "@/lib/format";
 // revision receipt (Original vs Revised per line, side by side, plus
 // subtotal/GST/refund) — @react-pdf/renderer has no table/colspan
 // primitive, so grouping is conveyed with header background color instead
-// of a literal spanning header cell.
-const COLUMNS: { key: string; label: string; width: number; group?: "orig" | "rev" }[] = [
+// of a literal spanning header cell. Only rendered when the order has
+// actually been revised (see InvoiceDocument) — an untouched order gets the
+// plain single-column layout below instead, so nothing implies a change
+// that never happened.
+const REVISED_COLUMNS: { key: string; label: string; width: number; group?: "orig" | "rev" }[] = [
   { key: "num", label: "#", width: 3 },
   { key: "origCategory", label: "Category", width: 6, group: "orig" },
   { key: "origName", label: "Original Item", width: 12, group: "orig" },
@@ -26,10 +29,34 @@ const COLUMNS: { key: string; label: string; width: number; group?: "orig" | "re
   { key: "total", label: "Total Price", width: 9 },
 ];
 
+// Plain single-list layout for an order that was never revised — no
+// original/revised split, since there's nothing to compare against.
+const PLAIN_COLUMNS: { key: string; label: string; width: number }[] = [
+  { key: "num", label: "#", width: 5 },
+  { key: "category", label: "Category", width: 14 },
+  { key: "name", label: "Item", width: 28 },
+  { key: "sku", label: "SKU", width: 10 },
+  { key: "condition", label: "Condition", width: 12 },
+  { key: "qty", label: "Qty", width: 10 },
+  { key: "unitPrice", label: "Unit $", width: 10 },
+  { key: "extPrice", label: "Ext $", width: 11 },
+];
+
 const styles = StyleSheet.create({
   page: { padding: 24, fontSize: 7, fontFamily: "Helvetica" },
   title: { fontSize: 16, fontWeight: 700, marginBottom: 2 },
-  subtitle: { fontSize: 8, color: "#5a524e", marginBottom: 10 },
+  subtitle: { fontSize: 8, color: "#5a524e", marginBottom: 6 },
+  badge: {
+    alignSelf: "flex-start",
+    marginBottom: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 3,
+    fontSize: 8,
+    fontWeight: 700,
+  },
+  badgeRevised: { backgroundColor: "#fdf3e0", color: "#9a6d00" },
+  badgeOriginal: { backgroundColor: "#e6f4ea", color: "#1e8a4a" },
   headerBlock: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
   headerCol: { fontSize: 8, lineHeight: 1.5 },
   headerLabel: { color: "#9a9490" },
@@ -49,7 +76,7 @@ function money(n: number): string {
   return `$${n.toFixed(2)}`;
 }
 
-function ItemCell({ value, width }: { value: string; width: number }) {
+function Cell({ value, width }: { value: string; width: number }) {
   return (
     <View style={[styles.cell, { width: `${width}%` }]}>
       <Text>{value}</Text>
@@ -57,7 +84,7 @@ function ItemCell({ value, width }: { value: string; width: number }) {
   );
 }
 
-function InvoiceRowLine({ row }: { row: InvoiceRow }) {
+function RevisedRowLine({ row }: { row: InvoiceRow }) {
   const o = row.original;
   const r = row.revised;
   const values: Record<string, string> = {
@@ -80,8 +107,29 @@ function InvoiceRowLine({ row }: { row: InvoiceRow }) {
   };
   return (
     <View style={styles.row}>
-      {COLUMNS.map((col) => (
-        <ItemCell key={col.key} value={values[col.key]} width={col.width} />
+      {REVISED_COLUMNS.map((col) => (
+        <Cell key={col.key} value={values[col.key]} width={col.width} />
+      ))}
+    </View>
+  );
+}
+
+function PlainRowLine({ row }: { row: InvoiceRow }) {
+  const r = row.revised;
+  const values: Record<string, string> = {
+    num: String(row.itemNumber),
+    category: r.category ?? "—",
+    name: r.productName,
+    sku: r.sku ?? "—",
+    condition: r.conditionType ?? "—",
+    qty: `${r.quantity} ${r.unit}`,
+    unitPrice: money(r.unitPrice),
+    extPrice: money(r.totalPrice),
+  };
+  return (
+    <View style={styles.row}>
+      {PLAIN_COLUMNS.map((col) => (
+        <Cell key={col.key} value={values[col.key]} width={col.width} />
       ))}
     </View>
   );
@@ -94,9 +142,12 @@ function InvoiceDocument({ data }: { data: InvoiceData }) {
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
-        <Text style={styles.title}>WeDoHalal — Order Invoice</Text>
+        <Text style={styles.title}>WeDoHalal — {data.isRevised ? "Revised Order Invoice" : "Order Invoice"}</Text>
         <Text style={styles.subtitle}>
           Order #{data.orderNumber} · {formatDateTime(data.createdAt)}
+        </Text>
+        <Text style={[styles.badge, data.isRevised ? styles.badgeRevised : styles.badgeOriginal]}>
+          {data.isRevised ? "REVISED — CHANGED SINCE ORIGINAL ORDER" : "ORIGINAL ORDER — NOT REVISED"}
         </Text>
 
         <View style={styles.headerBlock}>
@@ -118,46 +169,67 @@ function InvoiceDocument({ data }: { data: InvoiceData }) {
           </View>
         </View>
 
-        <View style={styles.headRow}>
-          {COLUMNS.map((col) => (
-            <View
-              key={col.key}
-              style={[
-                col.group === "orig" ? styles.headCellOrig : col.group === "rev" ? styles.headCellRev : styles.headCellPlain,
-                { width: `${col.width}%` },
-              ]}
-            >
-              <Text>{col.label}</Text>
+        {data.isRevised ? (
+          <>
+            <View style={styles.headRow}>
+              {REVISED_COLUMNS.map((col) => (
+                <View
+                  key={col.key}
+                  style={[
+                    col.group === "orig" ? styles.headCellOrig : col.group === "rev" ? styles.headCellRev : styles.headCellPlain,
+                    { width: `${col.width}%` },
+                  ]}
+                >
+                  <Text>{col.label}</Text>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
-        {data.rows.map((row) => (
-          <InvoiceRowLine key={row.itemNumber} row={row} />
-        ))}
+            {data.changedRows.map((row) => (
+              <RevisedRowLine key={row.itemNumber} row={row} />
+            ))}
+          </>
+        ) : (
+          <>
+            <View style={styles.headRow}>
+              {PLAIN_COLUMNS.map((col) => (
+                <View key={col.key} style={[styles.headCellPlain, { width: `${col.width}%` }]}>
+                  <Text>{col.label}</Text>
+                </View>
+              ))}
+            </View>
+            {data.rows.map((row) => (
+              <PlainRowLine key={row.itemNumber} row={row} />
+            ))}
+          </>
+        )}
 
         <View style={styles.totalsBox}>
-          <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>Original subtotal</Text>
-            <Text>{money(data.originalSubtotal)}</Text>
-          </View>
-          <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>Original GST</Text>
-            <Text>{money(data.originalGst)}</Text>
-          </View>
-          <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>Original total</Text>
-            <Text>{money(data.originalTotal)}</Text>
-          </View>
-          <View style={[styles.totalsRow, { marginTop: 4 }]}>
-            <Text style={styles.totalsLabel}>Revised subtotal</Text>
+          {data.isRevised && (
+            <>
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalsLabel}>Original subtotal</Text>
+                <Text>{money(data.originalSubtotal)}</Text>
+              </View>
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalsLabel}>Original GST</Text>
+                <Text>{money(data.originalGst)}</Text>
+              </View>
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalsLabel}>Original total</Text>
+                <Text>{money(data.originalTotal)}</Text>
+              </View>
+            </>
+          )}
+          <View style={[styles.totalsRow, ...(data.isRevised ? [{ marginTop: 4 }] : [])]}>
+            <Text style={styles.totalsLabel}>{data.isRevised ? "Revised subtotal" : "Subtotal"}</Text>
             <Text>{money(data.revisedSubtotal)}</Text>
           </View>
           <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>Revised GST</Text>
+            <Text style={styles.totalsLabel}>{data.isRevised ? "Revised GST" : "GST"}</Text>
             <Text>{money(data.revisedGst)}</Text>
           </View>
           <View style={styles.totalsRow}>
-            <Text style={{ fontWeight: 700 }}>Revised total</Text>
+            <Text style={{ fontWeight: 700 }}>{data.isRevised ? "Revised total" : "Total"}</Text>
             <Text style={{ fontWeight: 700 }}>{money(data.revisedTotal)}</Text>
           </View>
           {(refundOwed || balanceDue) && (

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { createOrderSchema } from "@/lib/validation/orders";
-import { createOrder, OrderError } from "@/lib/db/queries/orders";
+import { createOrder, markOrderPaymentFailed, OrderError } from "@/lib/db/queries/orders";
 import { getPlatformSettings } from "@/lib/db/queries/settings";
 import { Order } from "@/lib/db/models/Order";
 import { getStripe } from "@/lib/stripe";
@@ -41,48 +41,81 @@ export async function POST(request: Request) {
 
   const settings = await getPlatformSettings();
 
+  // From here on, any failure must flip the order out of "Pending" instead
+  // of leaving it stuck — nothing below this point ever charges the
+  // customer (Stripe only takes payment once they submit card details on
+  // the Checkout page itself), so a failure here always means no money
+  // moved and the order is correctly cancelled rather than left as a
+  // phantom order the customer can't see or retry.
   let stripe;
   try {
     stripe = getStripe();
   } catch (err) {
+    await markOrderPaymentFailed(receipt.orderNumber);
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 
   const origin = new URL(request.url).origin;
 
-  const checkoutSession = await stripe.checkout.sessions.create({
-    mode: "payment",
-    line_items: [
+  let checkoutSession;
+  try {
+    checkoutSession = await stripe.checkout.sessions.create(
       {
-        price_data: {
-          currency: "cad",
-          product_data: { name: `WeDoHalal Wholesale order #${receipt.orderNumber}` },
-          unit_amount: Math.round(receipt.subtotal * 100),
-        },
-        quantity: 1,
+        mode: "payment",
+        line_items: [
+          {
+            price_data: {
+              currency: "cad",
+              product_data: { name: `WeDoHalal Wholesale order #${receipt.orderNumber}` },
+              unit_amount: Math.round(receipt.subtotal * 100),
+            },
+            quantity: 1,
+          },
+          {
+            price_data: {
+              currency: "cad",
+              product_data: { name: `GST (${settings.gstRatePercent}%)` },
+              unit_amount: Math.round(receipt.gstAmount * 100),
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: { orderNumber: receipt.orderNumber },
+        success_url: `${origin}/checkout/success?order=${receipt.orderNumber}&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/checkout`,
       },
-      {
-        price_data: {
-          currency: "cad",
-          product_data: { name: `GST (${settings.gstRatePercent}%)` },
-          unit_amount: Math.round(receipt.gstAmount * 100),
-        },
-        quantity: 1,
-      },
-    ],
-    metadata: { orderNumber: receipt.orderNumber },
-    success_url: `${origin}/checkout/success?order=${receipt.orderNumber}&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/checkout`,
-  });
+      // Ties this Stripe call to this one order, so a network blip that
+      // makes our own code (or a future retry) call create() twice for the
+      // same order reuses the first Checkout Session instead of minting a
+      // second one — never two payable links, never a double charge.
+      { idempotencyKey: `checkout-session:${receipt.orderNumber}` },
+    );
+  } catch {
+    await markOrderPaymentFailed(receipt.orderNumber);
+    return NextResponse.json(
+      { error: "We couldn't reach Stripe to start checkout. No payment was taken — please try again." },
+      { status: 502 },
+    );
+  }
 
   if (!checkoutSession.url) {
+    await markOrderPaymentFailed(receipt.orderNumber);
     return NextResponse.json({ error: "Could not start Stripe checkout." }, { status: 500 });
   }
 
-  await Order.update(
-    { stripeSessionId: checkoutSession.id },
-    { where: { orderNumber: receipt.orderNumber } },
-  );
+  try {
+    await Order.update(
+      { stripeSessionId: checkoutSession.id },
+      { where: { orderNumber: receipt.orderNumber } },
+    );
+  } catch (err) {
+    // Not fatal: the customer already has a valid, payable Stripe URL, and
+    // the webhook writes stripeSessionId again once payment completes
+    // (markOrderPaidFromStripe matches on orderNumber, not this column) —
+    // failing the request here would throw away a working checkout link
+    // over a redundant write.
+    console.error(`[stripe-session] Failed to store session id for ${receipt.orderNumber}:`, err);
+  }
 
   return NextResponse.json({ url: checkoutSession.url });
 }

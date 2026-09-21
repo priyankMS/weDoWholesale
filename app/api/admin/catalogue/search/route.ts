@@ -20,5 +20,9 @@ export async function GET(request: Request) {
       )
     : products;
 
-  return NextResponse.json({ products: filtered.slice(0, 25) });
+  // The whole catalogue is only ~115 products — cheap to return in full so
+  // every category shows in the picker's tree, not just whichever happen
+  // to sort first alphabetically. This cap is just a sanity ceiling for a
+  // much larger future catalogue, not a real limit today.
+  return NextResponse.json({ products: filtered.slice(0, 1000) });
 }

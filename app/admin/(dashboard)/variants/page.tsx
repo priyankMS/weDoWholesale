@@ -7,6 +7,8 @@ import { StockBadge } from "@/components/admin/StockBadge";
 import { AdminPageHeader, AdminHeaderSearch, AdminHeaderGhostLink } from "@/components/admin/AdminPageHeader";
 import { AdminToolbar, AdminFilterSelect, AdminToolbarSpacer, AdminCountBadge } from "@/components/admin/AdminToolbar";
 import { AdminPagination } from "@/components/admin/AdminPagination";
+import { DeleteVariantButton } from "@/components/admin/DeleteVariantButton";
+import { AddVariantModal } from "@/components/admin/AddVariantModal";
 
 const PAGE_SIZE = 25;
 
@@ -72,6 +74,7 @@ export default async function AdminVariantsPage({
         <AdminHeaderGhostLink href={`/api/admin/export/variants?${exportParams.toString()}`}>
           ⬇ Export
         </AdminHeaderGhostLink>
+        <AddVariantModal />
       </AdminPageHeader>
 
       <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
@@ -151,7 +154,7 @@ export default async function AdminVariantsPage({
                     </th>
                   ),
                 )}
-                <th className="w-16 px-2.5 py-1.5" />
+                <th className="w-24 px-2.5 py-1.5" />
               </tr>
             </thead>
             <tbody>
@@ -204,10 +207,11 @@ export default async function AdminVariantsPage({
                       "—"
                     )}
                   </td>
-                  <td className="px-2.5 py-1.5 text-right">
+                  <td className="px-2.5 py-1.5 text-right whitespace-nowrap">
                     <Link href={`/admin/variants/${v.id}`} className="rounded p-1 text-[15px] hover:bg-[#fdf2f1]" aria-label="Edit">
                       ✏️
                     </Link>
+                    <DeleteVariantButton variantId={v.id} />
                   </td>
                 </tr>
               ))}

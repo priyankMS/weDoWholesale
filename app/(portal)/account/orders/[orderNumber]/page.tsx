@@ -273,6 +273,10 @@ export default async function OrderDetailPage({
               >
                 ⬇ Download receipt
               </a>
+            ) : order.paymentStatus === "Failed" ? (
+              <div className="text-center text-[0.78rem] font-semibold text-red-500">
+                Payment failed — this order was not charged.
+              </div>
             ) : (
               <div className="text-center text-[0.78rem] text-neutral-400">
                 Receipt will appear here once payment is confirmed.

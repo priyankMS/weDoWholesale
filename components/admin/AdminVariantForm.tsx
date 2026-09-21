@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import useSWRMutation from "swr/mutation";
 import { toast } from "sonner";
 import { updateAdminVariant } from "@/lib/api/adminVariants";
+import { DeleteVariantButton } from "@/components/admin/DeleteVariantButton";
 import { getApiErrorMessage } from "@/lib/api/error";
 import {
   adminVariantUpdateSchema,
@@ -126,7 +127,15 @@ export function AdminVariantForm({
         </div>
       </div>
 
-      <div className="flex justify-end gap-2.5">
+      <div className="flex items-center justify-between gap-2.5">
+        <DeleteVariantButton
+          variantId={variantId}
+          redirectTo="/admin/variants"
+          confirmLabel="Delete this variant? This can't be undone."
+          className="rounded-[5px] border border-[#f5c4be] bg-white px-4 py-1.5 text-[14px] font-semibold text-[#c04535] hover:bg-[#fdf2f1] disabled:opacity-60"
+          label="🗑️ Delete Variant"
+        />
+        <div className="flex gap-2.5">
         <button
           type="button"
           onClick={() => router.push("/admin/variants")}
@@ -141,6 +150,7 @@ export function AdminVariantForm({
         >
           {isMutating ? "Saving…" : "💾 Save Changes"}
         </button>
+        </div>
       </div>
     </form>
   );

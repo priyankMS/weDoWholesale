@@ -1,7 +1,11 @@
 import { Order } from "@/lib/db/models/Order";
 import { User } from "@/lib/db/models/User";
 import { Address } from "@/lib/db/models/Address";
-import { getOrderRevisionView, type OrderItemSnapshot } from "@/lib/db/queries/adminOrders";
+import {
+  getOrderRevisionView,
+  revisionRowChanged,
+  type OrderItemSnapshot,
+} from "@/lib/db/queries/adminOrders";
 
 export type InvoiceRow = {
   itemNumber: number;
@@ -20,7 +24,14 @@ export type InvoiceData = {
   paymentMethod: string | null;
   paymentStatus: string;
   isRevised: boolean;
+  // Every current item, in order — what the renderers use for a plain
+  // (never-revised) invoice, where there's no original/revised split.
   rows: InvoiceRow[];
+  // Only the items actually added, substituted, or quantity/price-changed
+  // since the order was first placed — what the renderers use for the
+  // revised invoice's Original-vs-Revised diff table. A never-touched item
+  // has original === revised and has no place in a "what changed" table.
+  changedRows: InvoiceRow[];
   originalSubtotal: number;
   originalGst: number;
   originalTotal: number;
@@ -63,6 +74,9 @@ export async function getOrderInvoiceData(orderId: number): Promise<InvoiceData 
     paymentStatus: order.paymentStatus,
     isRevised: revision.isRevised,
     rows: revision.rows.map((r, i) => ({ itemNumber: i + 1, original: r.original, revised: r.revised })),
+    changedRows: revision.rows
+      .filter(revisionRowChanged)
+      .map((r, i) => ({ itemNumber: i + 1, original: r.original, revised: r.revised })),
     originalSubtotal: revision.originalSubtotal,
     originalGst: revision.originalGst,
     originalTotal: revision.originalTotal,

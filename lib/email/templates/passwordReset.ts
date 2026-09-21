@@ -47,7 +47,7 @@ export function passwordResetEmail(
     bodyHtml: body,
     footerLinks: [
       { label: "Portal", href: `${emailBaseUrl()}/login` },
-      { label: "Privacy Policy", href: `${emailBaseUrl()}/privacy` },
+      { label: "Privacy Policy", href: `${emailBaseUrl()}/legal/privacy` },
       { label: "Contact", href: "https://wa.me/17807227623" },
     ],
     footerNote: "This is a transactional security email and cannot be unsubscribed from.",

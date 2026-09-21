@@ -34,8 +34,14 @@ export function ProductCard({
   const showToast = useToast();
   const { addItem } = useCart();
   const [expanded, setExpanded] = useState(false);
-  const [qty, setQty] = useState(10);
+  const [qty, setQty] = useState(Math.max(10, product.variants[0]?.minOrderQty ?? 10));
   const [justAdded, setJustAdded] = useState(false);
+  // Tracks which variant `qty` was last set for — when switching to a SKU
+  // with a higher minimum via the dimension buttons below, this bumps qty
+  // up to match rather than silently leaving it under that variant's real
+  // minimum (the stepper's own min bound only stops further decreasing,
+  // it can't fix a stale value already below the new floor).
+  const [qtyCheckedForVariantId, setQtyCheckedForVariantId] = useState<number | null>(null);
 
   // Same per-attribute picker as the product detail page's buy box (and the
   // client's reference design) — Condition / Cut Style / Bone / Skin / Fat /
@@ -66,6 +72,13 @@ export function ProductCard({
   // different SKU/supplier), just take the first match rather than surfacing
   // a raw "Choose option" list of near-identical buttons to the buyer.
   const selectedVariant = candidates[0] ?? product.variants[0] ?? null;
+
+  if (selectedVariant && selectedVariant.id !== qtyCheckedForVariantId) {
+    setQtyCheckedForVariantId(selectedVariant.id);
+    if (selectedVariant.minOrderQty != null && qty < selectedVariant.minOrderQty) {
+      setQty(selectedVariant.minOrderQty);
+    }
+  }
 
   function selectDimension(key: VariantDimensionKey, value: string) {
     setSelections((prev) => resolveDimensionSelection(product.variants, activeDimensions, prev, key, value));
@@ -220,8 +233,13 @@ export function ProductCard({
         </div>
       ))}
 
+      {selectedVariant?.minOrderQty != null && (
+        <div className="mb-1.5 text-[0.7rem] font-semibold text-neutral-400">
+          Min. order: {selectedVariant.minOrderQty} {selectedVariant.minOrderUnit || product.unit}
+        </div>
+      )}
       <div className="flex items-center gap-2.5">
-        <QtyStepper value={qty} onChange={setQty} />
+        <QtyStepper value={qty} onChange={setQty} min={selectedVariant?.minOrderQty ?? 1} />
         <button
           type="button"
           onClick={addToCart}

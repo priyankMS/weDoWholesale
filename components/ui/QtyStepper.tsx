@@ -7,12 +7,15 @@ export function QtyStepper({
   onChange: (next: number) => void;
   min?: number;
 }) {
+  const atMin = value <= min;
+
   return (
     <div className="flex items-center overflow-hidden rounded-[10px] border-[1.5px] border-neutral-200">
       <button
         type="button"
+        disabled={atMin}
         onClick={() => onChange(Math.max(min, value - 1))}
-        className="flex h-10.5 w-9.5 items-center justify-center bg-neutral-50 text-lg font-bold text-primary-600 active:bg-primary-200"
+        className="flex h-10.5 w-9.5 items-center justify-center bg-neutral-50 text-lg font-bold text-primary-600 active:bg-primary-200 disabled:cursor-not-allowed disabled:text-neutral-300 disabled:active:bg-neutral-50"
       >
         −
       </button>

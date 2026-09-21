@@ -170,6 +170,81 @@ export async function listVariantsForProduct(productId: number): Promise<AdminVa
   });
 }
 
+export type AdminVariantCreateData = {
+  productId: number;
+  sku?: string | null;
+  conditionType?: string | null;
+  cutType?: string | null;
+  boneType?: string | null;
+  skinType?: string | null;
+  fatLevel?: string | null;
+  region?: string | null;
+  cutValue?: string | null;
+  minOrderQty?: number | null;
+  minOrderUnit?: string | null;
+  legacySku?: string | null;
+  unit?: string | null;
+  basePrice?: number | null;
+  discountPrice?: number | null;
+  stockStatus?: "in" | "low" | "out" | null;
+};
+
+// Adds another cut/condition/region SKU to an already-existing product —
+// the counterpart to createAdminProduct()'s bundled "first variant" in
+// adminProducts.ts, which only ever runs once at product-creation time.
+// Mirrors that same WdhVariant.create() shape (every non-CreationOptional
+// column — cutValue/basePrice/discountPrice/thumbnail*/image*Alt — must be
+// passed explicitly, even as null, or TS rejects the call).
+export async function createVariant(input: AdminVariantCreateData): Promise<{ id: number }> {
+  const product = await WdhProduct.findByPk(input.productId);
+  if (!product) throw new Error("Product not found");
+
+  const variant = await WdhVariant.create({
+    productId: input.productId,
+    sku: input.sku ?? null,
+    conditionType: input.conditionType ?? null,
+    cutType: input.cutType ?? null,
+    boneType: input.boneType ?? null,
+    skinType: input.skinType ?? null,
+    fatLevel: input.fatLevel ?? null,
+    region: input.region ?? null,
+    cutValue: input.cutValue ?? null,
+    minOrderQty: input.minOrderQty ?? null,
+    minOrderUnit: input.minOrderUnit ?? null,
+    legacySku: input.legacySku ?? null,
+    shortTitle: product.item,
+    longTitle: product.item,
+    per: input.unit ?? "kg",
+    basePrice: input.basePrice ?? null,
+    discountPrice: input.discountPrice ?? null,
+    stockStatus: input.stockStatus ?? "in",
+    thumbnail: null,
+    thumbnailAlt: null,
+    image1: null,
+    image1Alt: null,
+    image2: null,
+    image2Alt: null,
+    image3: null,
+    image3Alt: null,
+  });
+
+  return { id: variant.id };
+}
+
+// wdh_variant_pricing.variant_id has a real ON DELETE CASCADE FK back to
+// wdh_variants (see 20260814100024-create-wdh-variant-pricing.js), so a
+// variant's pricing rows are cleaned up automatically at the DB level.
+// order_items.variant_id has no FK constraint at all (added later via a
+// plain addColumn) and OrderItem snapshots productName/sku/etc. directly,
+// so a deleted variant never corrupts a past order's display — it just
+// leaves that column pointing at nothing, same as it already tolerates a
+// null variantId.
+export async function deleteVariant(id: number): Promise<void> {
+  const variant = await WdhVariant.findByPk(id);
+  if (!variant) throw new Error("Variant not found");
+  await variant.destroy();
+}
+
 export async function getVariantFacets(): Promise<{
   conditions: string[];
   cutTypes: string[];

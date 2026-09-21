@@ -268,6 +268,23 @@ function uniqueSorted(values: (string | null | undefined)[]): string[] {
   );
 }
 
+// The raw cut-style column has a long tail of one-off/oddly-formatted values
+// (leftover free text from the source catalog) — surfacing all of them turns
+// the sidebar filter into a wall of near-useless checkboxes. Ranking by how
+// many products actually use each value and keeping only the top N mirrors
+// the type-chip row above the grid, which is popularity-ordered too.
+function topByFrequency(values: (string | null | undefined)[], limit: number): string[] {
+  const counts = new Map<string, number>();
+  for (const v of values) {
+    if (!v || !v.trim()) continue;
+    counts.set(v, (counts.get(v) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([v]) => v);
+}
+
 // The category listing screen (Phase 2 Discovery and Browsing). Pushes
 // category/search/type down to SQL (the only filters that map to plain
 // columns); condition/bone/skin/stock/price are derived per-variant
@@ -324,7 +341,7 @@ export async function queryProducts(params: ProductQueryParams): Promise<Product
     types: uniqueSorted(rows.map((r) => r.type)),
     typeCounts,
     condition: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.conditionType))),
-    cut: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.cutType))),
+    cut: topByFrequency(products.flatMap((p) => p.variants.map((v) => v.cutType)), 10),
     bone: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.boneType))),
     skin: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.skinType))),
     fat: uniqueSorted(products.flatMap((p) => p.variants.map((v) => v.fatLevel))),

@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { WdhProduct } from "@/lib/db/models/WdhProduct";
-import { listVariantsForProduct } from "@/lib/db/queries/adminVariants";
+import { listVariantsForProduct, getVariantFacets } from "@/lib/db/queries/adminVariants";
 import { AdminProductForm } from "@/components/admin/AdminProductForm";
+import { AddVariantForm } from "@/components/admin/AddVariantForm";
+import { DeleteVariantButton } from "@/components/admin/DeleteVariantButton";
 import { AdminTableCard } from "@/components/admin/AdminTableCard";
 import { AdminBadge } from "@/components/admin/AdminBadge";
 import { StockBadge } from "@/components/admin/StockBadge";
@@ -17,7 +19,10 @@ export default async function AdminProductEditPage({
   const product = await WdhProduct.findByPk(Number(id));
   if (!product) notFound();
 
-  const variants = await listVariantsForProduct(product.id);
+  const [variants, facets] = await Promise.all([
+    listVariantsForProduct(product.id),
+    getVariantFacets(),
+  ]);
 
   return (
     <div className="flex h-full flex-col">
@@ -57,7 +62,7 @@ export default async function AdminProductEditPage({
                       {h}
                     </th>
                   ))}
-                  <th className="w-16 px-2.5 py-1.5" />
+                  <th className="w-24 px-2.5 py-1.5" />
                 </tr>
               </thead>
               <tbody>
@@ -91,10 +96,11 @@ export default async function AdminProductEditPage({
                         "—"
                       )}
                     </td>
-                    <td className="px-2.5 py-1.5 text-right">
+                    <td className="px-2.5 py-1.5 text-right whitespace-nowrap">
                       <Link href={`/admin/variants/${v.id}`} className="rounded p-1 text-[15px] hover:bg-[#fdf2f1]" aria-label="Edit">
                         ✏️
                       </Link>
+                      <DeleteVariantButton variantId={v.id} />
                     </td>
                   </tr>
                 ))}
@@ -108,6 +114,18 @@ export default async function AdminProductEditPage({
               </tbody>
             </table>
           </AdminTableCard>
+
+          <div className="mt-3">
+            <AddVariantForm
+              productId={product.id}
+              facets={{
+                conditions: facets.conditions,
+                cutTypes: facets.cutTypes,
+                bones: facets.bones,
+                skins: facets.skins,
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>

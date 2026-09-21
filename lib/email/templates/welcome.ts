@@ -101,8 +101,8 @@ export function welcomeEmail(params: WelcomeEmailParams): { subject: string; htm
     bodyHtml: body,
     footerLinks: [
       { label: "Portal", href: signInUrl },
-      { label: "Terms & Conditions", href: `${emailBaseUrl()}/terms` },
-      { label: "Privacy Policy", href: `${emailBaseUrl()}/privacy` },
+      { label: "Terms & Conditions", href: `${emailBaseUrl()}/legal/terms` },
+      { label: "Privacy Policy", href: `${emailBaseUrl()}/legal/privacy` },
       { label: "Contact", href: "https://wa.me/17807227623" },
     ],
     footerNote: "You received this because you registered a wholesale account.",

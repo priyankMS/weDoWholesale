@@ -40,6 +40,12 @@ export function invoiceEmail(params: InvoiceEmailParams): { subject: string; htm
   } = params;
 
   const accountRef = `WDH-ACC-${String(accountId).padStart(5, "0")}`;
+  // There's no per-invoice detail page (only the order detail page shows a
+  // specific invoice's context) — link the primary CTA there. `invoicesUrl`
+  // stays for the footer's general "Invoices" nav shortcut, matching how the
+  // other templates keep a specific orderUrl separate from the generic
+  // "Portal" footer link.
+  const orderUrl = `${emailBaseUrl()}/account/orders/${orderNumber}`;
   const invoicesUrl = `${emailBaseUrl()}/account/invoices`;
 
   const body = `
@@ -79,7 +85,7 @@ export function invoiceEmail(params: InvoiceEmailParams): { subject: string; htm
 
     ${infoBox("📎", `A PDF copy of this invoice is attached to this email. Save it for your accounting records. You can also download it anytime from the Invoices section of your portal account.`, "blue")}
 
-    ${ctaButton("View invoice in portal →", invoicesUrl, "blue")}
+    ${ctaButton("View invoice in portal →", orderUrl, "blue")}
 
     <p style="font-size:13.5px;color:#5a524e;line-height:1.7;margin:14px 0 0;">If you have any questions about this invoice, reply to this email or contact us at help@wedohalal.com.</p>
     <p style="font-size:13.5px;color:#5a524e;line-height:1.7;margin:14px 0 0;">The WeDoHalal Billing Team</p>
@@ -103,6 +109,6 @@ export function invoiceEmail(params: InvoiceEmailParams): { subject: string; htm
   return {
     subject: `Invoice ${invoiceNumber} — ${formatMoney(total)} due ${dueDateLabel}`,
     html,
-    text: `Hi ${contactName},\n\nInvoice ${invoiceNumber} for order #${orderNumber}: ${formatMoney(total)} due ${dueDateLabel} (${termsLabel}). View it at ${invoicesUrl}.\n\nThe WeDoHalal Billing Team`,
+    text: `Hi ${contactName},\n\nInvoice ${invoiceNumber} for order #${orderNumber}: ${formatMoney(total)} due ${dueDateLabel} (${termsLabel}). View it at ${orderUrl}.\n\nThe WeDoHalal Billing Team`,
   };
 }

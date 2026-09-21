@@ -48,7 +48,13 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
   const [pendingSub, setPendingSub] = useState<Record<number, PickedVariant | undefined>>({});
   const [savingId, setSavingId] = useState<number | null>(null);
 
-  async function handleSave(row: RevisionRow) {
+  // No separate "Save" button — a substitution saves the instant it's
+  // picked, and a quantity/price edit saves the instant the field is left
+  // (blur) or Enter is pressed, so every interaction here is final on its
+  // own. `overrideSub` is passed straight through rather than read back off
+  // `pendingSub` state, since a just-called setState hasn't re-rendered yet
+  // when the substitution picker's onSelect fires this in the same tick.
+  async function saveRow(row: RevisionRow, overrideSub?: PickedVariant) {
     const quantity = Number(quantities[row.orderItemId]);
     if (Number.isNaN(quantity) || quantity < 0) {
       toast.error("Enter a valid quantity");
@@ -60,7 +66,7 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
       toast.error("Enter a valid price");
       return;
     }
-    const sub = pendingSub[row.orderItemId];
+    const sub = overrideSub ?? pendingSub[row.orderItemId];
     setSavingId(row.orderItemId);
     try {
       await updateAdminOrderItem(orderId, row.orderItemId, {
@@ -71,7 +77,7 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
         ...(unitPrice != null && unitPrice !== row.revised.unitPrice ? { unitPrice } : {}),
         ...(sub ? { productId: sub.productId, variantId: sub.variantId } : {}),
       });
-      toast.success(sub ? "Item substituted" : "Item updated");
+      toast.success(sub ? "Item substituted" : "Saved");
       setPendingSub((p) => ({ ...p, [row.orderItemId]: undefined }));
       setSubstituting(null);
       router.refresh();
@@ -80,6 +86,27 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
     } finally {
       setSavingId(null);
     }
+  }
+
+  function handleQuantityBlur(row: RevisionRow) {
+    const raw = quantities[row.orderItemId];
+    if (raw === "" || Number.isNaN(Number(raw))) return;
+    if (raw !== String(row.revised.quantity)) saveRow(row);
+  }
+
+  function handleUnitPriceBlur(row: RevisionRow) {
+    const raw = unitPrices[row.orderItemId];
+    if (raw === "" || Number.isNaN(Number(raw))) return;
+    if (Number(raw) !== row.revised.unitPrice) saveRow(row);
+  }
+
+  function handleEnterKey(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") e.currentTarget.blur();
+  }
+
+  function handleSubstituteSelect(row: RevisionRow, picked: PickedVariant) {
+    setPendingSub((p) => ({ ...p, [row.orderItemId]: picked }));
+    saveRow(row, picked);
   }
 
   async function handleRemove(row: RevisionRow) {
@@ -114,12 +141,9 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
           const quantity = Number(quantities[row.orderItemId] ?? row.revised.quantity);
           const totalPrice =
             !Number.isNaN(quantity) && unitPrice != null ? quantity * unitPrice : row.revised.totalPrice;
-          const changed =
-            quantities[row.orderItemId] !== String(row.revised.quantity) ||
-            (unitPriceInput !== "" && Number(unitPriceInput) !== row.revised.unitPrice) ||
-            !!sub;
           const delta = formatDelta(row.original, quantity, unit);
           const isReplaced = !!row.original && row.original.productName !== row.revised.productName;
+          const saving = savingId === row.orderItemId;
           return (
             <div key={row.orderItemId} className="rounded-md border border-[#e4e1dc] bg-white p-3">
               {row.original && (
@@ -144,6 +168,7 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
                     REPLACED
                   </span>
                 )}
+                {saving && <span className="text-[#9a9490] normal-case">Saving…</span>}
               </div>
               <div className="font-semibold text-[#1a1816]">{displayName}</div>
               <div className="text-[12px] text-[#9a9490]">
@@ -151,9 +176,7 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
               </div>
               {substituting === row.orderItemId ? (
                 <div className="mt-1.5">
-                  <ProductVariantPicker
-                    onSelect={(picked) => setPendingSub((p) => ({ ...p, [row.orderItemId]: picked }))}
-                  />
+                  <ProductVariantPicker onSelect={(picked) => handleSubstituteSelect(row, picked)} />
                   {sub && (
                     <div className="mt-1 text-[11px] font-semibold text-[#1e8a4a]">Selected: {sub.label}</div>
                   )}
@@ -179,6 +202,8 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
                     min="0"
                     value={quantities[row.orderItemId] ?? ""}
                     onChange={(e) => setQuantities((q) => ({ ...q, [row.orderItemId]: e.target.value }))}
+                    onBlur={() => handleQuantityBlur(row)}
+                    onKeyDown={handleEnterKey}
                     className="w-full rounded border border-[#d0ccc6] px-1.5 py-1 text-[13px] outline-none focus:border-[#e05a4a]"
                   />
                   {delta && (
@@ -198,6 +223,8 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
                     placeholder={row.revised.unitPrice.toFixed(2)}
                     value={unitPriceInput}
                     onChange={(e) => setUnitPrices((p) => ({ ...p, [row.orderItemId]: e.target.value }))}
+                    onBlur={() => handleUnitPriceBlur(row)}
+                    onKeyDown={handleEnterKey}
                     className="w-full rounded border border-[#d0ccc6] px-1.5 py-1 text-[13px] outline-none focus:border-[#e05a4a]"
                   />
                 </div>
@@ -207,35 +234,43 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
                 </div>
               </div>
 
-              <div className="mt-2.5 flex items-center gap-3">
-                {changed && (
-                  <button
-                    type="button"
-                    onClick={() => handleSave(row)}
-                    disabled={savingId === row.orderItemId}
-                    className="rounded-[5px] bg-[#e05a4a] px-3 py-1.5 text-[12px] font-bold text-white hover:bg-[#c04535] disabled:opacity-60"
-                  >
-                    {savingId === row.orderItemId ? "Saving…" : "Save"}
-                  </button>
-                )}
-                {row.revised.quantity > 0 && (
+              {row.revised.quantity > 0 && (
+                <div className="mt-2.5">
                   <button
                     type="button"
                     onClick={() => handleRemove(row)}
-                    disabled={savingId === row.orderItemId}
+                    disabled={saving}
                     className="text-[12px] font-bold text-[#9a9490] hover:text-[#c04535]"
                   >
                     Remove
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
-      {/* Full table at sm and up. */}
-      <table className="hidden w-full text-left text-[13px] sm:table">
+      {/* Full table at sm and up. Fixed layout with explicit column widths —
+          without it, the two description columns get squeezed down to
+          almost nothing by the browser's auto layout (since the numeric
+          columns need their own space too), and a long product name like
+          "Beef Bones (Frozen · (For Soup) · With Bone · Skinless · Medium
+          Fat)" wraps across 5-6 lines and blows the row height out. A fixed
+          medium width plus a 2-line clamp (full name still on hover via
+          `title`) keeps every row a sane, predictable height; the table's
+          own min-width lets it scroll horizontally in its
+          `overflow-x-auto` wrapper on narrow screens instead of
+          compressing further. */}
+      <table className="hidden w-full min-w-[980px] table-fixed text-left text-[13px] sm:table">
+        <colgroup>
+          <col className="w-[250px]" />
+          <col className="w-[320px]" />
+          <col className="w-[110px]" />
+          <col className="w-[110px]" />
+          <col className="w-[100px]" />
+          <col className="w-[90px]" />
+        </colgroup>
         <thead>
           <tr className="bg-[#f0ede9]">
             {["What the customer ordered", "What you're sending", "Qty", "Unit Price", "Total", ""].map((h) => (
@@ -256,12 +291,9 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
             const quantity = Number(quantities[row.orderItemId] ?? row.revised.quantity);
             const totalPrice =
               !Number.isNaN(quantity) && unitPrice != null ? quantity * unitPrice : row.revised.totalPrice;
-            const changed =
-              quantities[row.orderItemId] !== String(row.revised.quantity) ||
-              (unitPriceInput !== "" && Number(unitPriceInput) !== row.revised.unitPrice) ||
-              !!sub;
             const delta = formatDelta(row.original, quantity, unit);
             const isReplaced = !!row.original && row.original.productName !== row.revised.productName;
+            const saving = savingId === row.orderItemId;
             return (
               <tr
                 key={row.orderItemId}
@@ -270,7 +302,12 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
                 <td className="px-2.5 py-1.5 align-top text-[#9a9490]">
                   {row.original ? (
                     <>
-                      <div className="font-semibold text-[#5a5450]">{row.original.productName}</div>
+                      <div
+                        className="line-clamp-2 font-semibold break-words text-[#5a5450]"
+                        title={row.original.productName}
+                      >
+                        {row.original.productName}
+                      </div>
                       <div className="text-[11px]">
                         {row.original.category ?? "—"} · {row.original.conditionType ?? "—"} ·{" "}
                         {row.original.sku ?? "—"}
@@ -285,8 +322,13 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
                   )}
                 </td>
                 <td className="px-2.5 py-1.5 align-top">
-                  <div className="flex items-center gap-1.5">
-                    <div className="font-semibold text-[#1a1816]">{displayName}</div>
+                  <div className="flex items-start gap-1.5">
+                    <div
+                      className="line-clamp-2 min-w-0 flex-1 font-semibold break-words text-[#1a1816]"
+                      title={displayName}
+                    >
+                      {displayName}
+                    </div>
                     {isReplaced && (
                       <span className="rounded-full bg-[#fdf2f1] px-1.5 py-0.5 text-[10px] font-bold text-[#c04535]">
                         REPLACED
@@ -297,15 +339,14 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
                         ADDED
                       </span>
                     )}
+                    {saving && <span className="text-[11px] text-[#9a9490]">Saving…</span>}
                   </div>
                   <div className="text-[11px] text-[#9a9490]">
                     {row.revised.category ?? "—"} · {row.revised.conditionType ?? "—"} · {row.revised.sku ?? "—"}
                   </div>
                   {substituting === row.orderItemId ? (
-                    <div className="mt-1.5 w-64">
-                      <ProductVariantPicker
-                        onSelect={(picked) => setPendingSub((p) => ({ ...p, [row.orderItemId]: picked }))}
-                      />
+                    <div className="mt-1.5 w-96 max-w-full">
+                      <ProductVariantPicker onSelect={(picked) => handleSubstituteSelect(row, picked)} />
                       {sub && (
                         <div className="mt-1 text-[11px] font-semibold text-[#1e8a4a]">Selected: {sub.label}</div>
                       )}
@@ -328,6 +369,8 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
                       min="0"
                       value={quantities[row.orderItemId] ?? ""}
                       onChange={(e) => setQuantities((q) => ({ ...q, [row.orderItemId]: e.target.value }))}
+                      onBlur={() => handleQuantityBlur(row)}
+                      onKeyDown={handleEnterKey}
                       className="w-16 rounded border border-[#d0ccc6] px-1.5 py-1 text-[13px] outline-none focus:border-[#e05a4a]"
                     />
                     <span className="text-[11px] text-[#9a9490]">{unit}</span>
@@ -346,33 +389,23 @@ export function OrderItemsEditTable({ orderId, rows }: { orderId: number; rows: 
                     placeholder={row.revised.unitPrice.toFixed(2)}
                     value={unitPriceInput}
                     onChange={(e) => setUnitPrices((p) => ({ ...p, [row.orderItemId]: e.target.value }))}
+                    onBlur={() => handleUnitPriceBlur(row)}
+                    onKeyDown={handleEnterKey}
                     className="w-20 rounded border border-[#d0ccc6] px-1.5 py-1 text-[13px] text-[#5a5450] outline-none focus:border-[#e05a4a]"
                   />
                 </td>
                 <td className="px-2.5 py-1.5 align-top font-semibold text-[#1a1816]">${totalPrice.toFixed(2)}</td>
                 <td className="px-2.5 py-1.5 align-top text-right">
-                  <div className="flex flex-col items-end gap-1">
-                    {changed && (
-                      <button
-                        type="button"
-                        onClick={() => handleSave(row)}
-                        disabled={savingId === row.orderItemId}
-                        className="rounded-[5px] bg-[#e05a4a] px-2.5 py-1 text-[12px] font-bold text-white hover:bg-[#c04535] disabled:opacity-60"
-                      >
-                        {savingId === row.orderItemId ? "Saving…" : "Save"}
-                      </button>
-                    )}
-                    {row.revised.quantity > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemove(row)}
-                        disabled={savingId === row.orderItemId}
-                        className="text-[11px] font-bold text-[#9a9490] hover:text-[#c04535]"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
+                  {row.revised.quantity > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(row)}
+                      disabled={saving}
+                      className="text-[11px] font-bold text-[#9a9490] hover:text-[#c04535]"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </td>
               </tr>
             );

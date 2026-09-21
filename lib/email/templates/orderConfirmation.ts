@@ -25,6 +25,10 @@ export type OrderConfirmationParams = {
   deliveryFeeLabel?: string;
   total: number;
   cancellationCutoffLabel: string;
+  // Stripe's hosted receipt for this charge — only set for online (card)
+  // payments once Stripe confirms them (see markOrderPaidFromStripe in
+  // lib/db/queries/orders.ts); omitted entirely for COD orders.
+  receiptUrl?: string | null;
 };
 
 export function orderConfirmationEmail(
@@ -44,6 +48,7 @@ export function orderConfirmationEmail(
     deliveryFeeLabel = "Free",
     total,
     cancellationCutoffLabel,
+    receiptUrl,
   } = params;
 
   const orderUrl = `${emailBaseUrl()}/account/orders/${orderNumber}`;
@@ -60,6 +65,14 @@ export function orderConfirmationEmail(
         { label: "Window", value: windowLabel },
         { label: "Delivering to", value: deliveryAddress },
         { label: "Payment", value: paymentLabel },
+        ...(receiptUrl
+          ? [
+              {
+                label: "Receipt",
+                value: `<a href="${receiptUrl}" style="color:#1a5a90;font-weight:700;text-decoration:none;">View Stripe receipt →</a>`,
+              },
+            ]
+          : []),
       ],
     })}
 
@@ -108,6 +121,6 @@ export function orderConfirmationEmail(
   return {
     subject: `Order confirmed — #${orderNumber} · ${businessName}`,
     html,
-    text: `Hi ${contactName},\n\nYour order #${orderNumber} is confirmed. Delivery: ${deliveryDateLabel}, ${windowLabel}. Total due: ${formatMoney(total)}.\n\nView it at ${orderUrl}\n\nThe WeDoHalal Team`,
+    text: `Hi ${contactName},\n\nYour order #${orderNumber} is confirmed. Delivery: ${deliveryDateLabel}, ${windowLabel}. Total due: ${formatMoney(total)}.\n\nView it at ${orderUrl}${receiptUrl ? `\nReceipt: ${receiptUrl}` : ""}\n\nThe WeDoHalal Team`,
   };
 }

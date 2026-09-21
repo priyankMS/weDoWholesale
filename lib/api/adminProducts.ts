@@ -25,7 +25,14 @@ export type AdminProductDetail = {
   };
   variants: AdminVariantRow[];
   pricing: ProductPricingVariant[];
-  facets: { conditions: string[]; bones: string[]; skins: string[] };
+  facets: {
+    conditions: string[];
+    cutTypes: string[];
+    bones: string[];
+    skins: string[];
+    fatLevels: string[];
+    origins: string[];
+  };
   categories: string[];
   suppliers: { id: number; name: string }[];
 };

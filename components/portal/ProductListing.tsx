@@ -42,7 +42,7 @@ export function ProductListing({
   const debouncedSearch = useDebounce(search, 350);
   const [part, setPart] = useState("All");
   const [sort, setSort] = useState<ProductQuerySort>("default");
-  const [view, setView] = useState<View>("grid");
+  const [view, setView] = useState<View>("list");
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const filtersKey = JSON.stringify(filters);
