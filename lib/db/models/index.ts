@@ -10,6 +10,8 @@ export { MessageThread } from "@/lib/db/models/MessageThread";
 export { Message } from "@/lib/db/models/Message";
 export { Announcement } from "@/lib/db/models/Announcement";
 export { AnnouncementRead } from "@/lib/db/models/AnnouncementRead";
+export { AdminPasswordReset } from "@/lib/db/models/AdminPasswordReset";
+export { StripeWebhookLog } from "@/lib/db/models/StripeWebhookLog";
 
 // Mirrors of the client's existing retail-site database
 // (see lib/db/migrations/2026081410*.js — imported from wdh_db_backup.sql).
