@@ -3,7 +3,11 @@ import type { NextRequest } from "next/server";
 
 
 export async function proxy(request: NextRequest) {
-  const statusUrl = new URL("/api/maintenance-status", request.url);
+  // Fetch via loopback, not the public domain — some hosts can't route a
+  // server's own outbound requests back to its own public IP (NAT hairpin),
+  // which breaks TLS on this self-call.
+  const port = process.env.PORT || 3000;
+  const statusUrl = new URL("/api/maintenance-status", `http://127.0.0.1:${port}`);
   const res = await fetch(statusUrl);
   const { on } = await res.json();
   if (on) {
