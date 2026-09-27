@@ -11,25 +11,6 @@ const NAV_LINKS = [
 export function Nav() {
   return (
     <div className="fixed inset-x-0 top-0 z-100">
-      {/* Announcement bar — desktop only */}
-      <div className="hidden bg-charcoal-900 px-12 py-2 lg:flex lg:items-center lg:justify-between">
-        <div className="text-[0.67rem] font-medium text-white/45">
-          🚚 <strong className="text-primary-500">Free delivery</strong> on
-          wholesale orders $100+ · Next-day before 3 PM
-        </div>
-        <div className="flex gap-5">
-          <a href="https://wedohalal.com" className="text-[0.67rem] font-medium text-white/45 hover:text-white">
-            Shop
-          </a>
-          <a href="#" className="text-[0.67rem] font-medium text-white/45 hover:text-white">
-            Wholesale
-          </a>
-          <a href="mailto:help@wedohalal.com" className="text-[0.67rem] font-medium text-white/45 hover:text-white">
-            Contact
-          </a>
-        </div>
-      </div>
-
       {/* Desktop nav */}
       <nav className="hidden h-18 items-center justify-between border-b border-primary-200 bg-primary-50 px-12 lg:flex">
         <Link href="#" className="flex items-center gap-2.5 font-serif text-[1.35rem] font-black text-neutral-900">

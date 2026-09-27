@@ -3,7 +3,7 @@ import { HeroCounters } from "@/components/landing/HeroCounters";
 
 export function Hero() {
   return (
-    <section className="relative flex min-h-[90vh] items-center overflow-hidden bg-charcoal-900 px-5 pt-20 pb-20 lg:pt-32">
+    <section className="relative flex min-h-[90vh] items-center overflow-hidden bg-charcoal-900 px-5 pt-20 pb-20 lg:pt-24">
       <div
         className="pointer-events-none absolute -top-20 -right-20 h-140 w-140 rounded-full"
         style={{
